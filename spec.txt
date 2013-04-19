@@ -1,0 +1,159 @@
+Author: Jake Jones
+Email: jaj5333@psu.edu
+
+Author: Scott Cheloha
+Email: ssc5145@psu.edu
+
+Steps for program execution:
+
+0) Start, read CMDL options; set global variables, etc
+
+1) Read in each line of Hakefile
+	a) clean-up (remove comments/trailing white space)
+	b) Macro expansion
+	c) Diagnose each line and add to lists
+		.identify if line is (target : prereq), (\t recipe)
+		.verify target, prereq, or recipe is formatted correctly
+		.add target, prereq or recipe to prespective list
+
+2) Attempt to hake a target based on step 1
+	a) verify target
+		i) ensure target is in global target list
+		ii) add target to recursively protected list of targets
+		iii) verify target's prereqs and that target needs to be haked
+			  .if prereq is in list of recursively protected targets, complain/quit
+			  .if prereq is target, preform step (2.a) on that target
+			  .if prereq is not target, assume filename
+			  	-ensure file with filename exists
+			  	-check stats, determine if target needs to be made
+		iv) if target needs to be haked, hake target (append targets' list-of-recipes to global list of list-of-recipes)
+		v) pop target from recursively protected list of targets
+		vi) return
+	b) print global list of list-of-recipes to be printed
+
+structs that need to be written and implemented (given functions to append, pop, find_by_name, allocate, deallocate, etc):
+
+// used for prereqs and recipes
+struct string_node
+{
+	struct string_node *next;
+	char *body;
+};
+
+// used for lists of prereqs and recipes
+struct string_list
+{
+	struct string_node *head;
+	struct string_node *tail;
+};
+
+// used for targets
+struct target
+{
+	struct target *next;
+	char *name;
+	struct string_list *prereqs;
+	struct string_list *recipes;
+	int needs_to_be_haked;	// default 0; indicates whether or not target's recipes need to be printed
+};
+
+struct target_list
+{
+	struct target *head;
+	struct target *tail
+};
+
+struct macro
+{
+	struct macro *next;
+	char *name;
+	char *body;
+	int body_length;
+};
+
+struct macro_list
+{
+	struct macro *head;
+	struct macro *tail;
+};
+
+Ideas for function prototypes that need to be written:
+
+// global variables needed
+struct string_list **recipe_lists_to_print; // another type needed?
+struct target_list *list_of_targets;		// all specified targets in hakefile
+struct target_list *recursively_protected_targets;
+
+struct target *target_to_hake;				// specified from command line option; usually argv[argc-1]
+
+
+
+void hake_target(char *targetname);
+
+void hake_target(char *targetname)
+{
+	// makes sure target exists in list_of_targets
+	struct target * target_to_verify;
+
+	if ((target_to_verify = get_target(targetname, list_of_targets)) == NULL)
+	{
+		fprintf(stderr, "error: don't know how to hake %s\n", targetname);
+		exit(1);
+	}
+	verify_target(t);
+	print(recipe_lists_to_print);
+	return;
+}
+
+void verify_target(struct target *target_to_verify);
+
+void verify_target(struct target *target_to_verify)
+{
+	// we need to ensure that target_to_verify cannot
+	// specify itself as a prerequisite and that no subtarget can specify it as a prerequisite 
+	append_target(target_to_verify, recursively_protected_targets);
+
+	// verify the target's prerequisites
+	verify_prerequisites(target_to_verify);
+
+	// if the target needs to be haked, add its recipes to the list of recipes to print
+	if (target_to_verify.needs_to_be_haked)
+	{
+		append_list_of_recipes(target->recipes, recipe_lists_to_print);
+	}
+
+	return;
+}
+
+void verify_prerequisities(struct target *target_to_verify);
+
+void verify_prerequisities(struct target *target_to_verify)
+{
+	struct string_node *current_prereq = target->recipes->head;
+
+	while (current_prereq != NULL)
+	{
+		if ((target_to_verify = get_target(targetname, list_of_targets)) != NULL)
+		{
+			verify_target(t);
+		}
+		else
+		{
+			// assume filename
+		}
+
+		current_prereq = current_prereq->next;
+	}
+}
+
+i) ensure target is in global target list
+ii) add target to recursively protected list of targets
+iii) verify target's prereqs and that target needs to be haked
+	  .if prereq is in list of recursively protected targets, complain/quit
+	  .if prereq is target, preform step (2.a) on that target
+	  .if prereq is not target, assume filename
+	  	-ensure file with filename exists
+	  	-check stats, determine if target needs to be made
+iv) if target needs to be haked, hake target (append targets' list-of-recipes to global list of list-of-recipes)
+v) pop target from recursively protected list of targets
+vi) return

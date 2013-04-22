@@ -37,6 +37,8 @@ int read_file(char *filename, int quiet);
 // fp comes from the file (named filename) opened by read_file() using fopen()
 void read_lines(char *filename, FILE *fp);
 
-int verify_tar_pre(const char * buf);
+int verify_tar_pre(const char *buf);
+
+void parse_target(const char *buf);
 
 #endif /* HAKE_H */

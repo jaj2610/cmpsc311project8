@@ -97,7 +97,8 @@ int main(int argc, char *argv[])
 				usage(EXIT_FAILURE);
 				break;
 			case ':':
-				fprintf(stderr, "%s: invalid option '%c' (missing argument)\n", prog, optopt);
+				fprintf(stderr, "%s: invalid option '%c' (missing argument)\n",
+						prog, optopt);
 				usage(EXIT_FAILURE);
 				break;
 			default:
@@ -319,7 +320,14 @@ void read_lines(char *filename, FILE *fp)
 			
 			have_target = true;
 			
+			if (verify_tar_pre(buf) != 1)
+			{
+				fprintf(stderr, "%s: error in file %s: incorrect target syntax at line %d\n",
+						prog, filename, line_number);
+				exit(EXIT_FAILURE);
+			}
 
+			parse_target(buf);
 		}
 		else if (p_equal != NULL)
 		{
@@ -389,12 +397,19 @@ void read_lines(char *filename, FILE *fp)
 				name_start++;
 			}
 
+			if (*name_start == buf + 7)
+			{
+				fprintf(stderr, "%s: %s:%d: error: no space between include and filename\n",
+						prog, filename, line_number);
+				exit(EXIT_FAILURE);
+			}
+
 			if (*name_start == '\0')
 			{
 				// following GNU Make, this is not an error
 				if (v_flag) 
 				{
-					fprintf(stderr, "%s: %s: line %d: include but no filename\n",
+					fprintf(stderr, "%s: %s:%d: error: include but no filename\n",
 							prog, filename, line_number);
 				}
 				
@@ -448,6 +463,12 @@ void read_lines(char *filename, FILE *fp)
 
 int verify_tar_pre(const char * buf)
 {
-
+	
 	return 1;
+}
+
+void parse_target(const char *buf)
+{
+	
+	return;
 }

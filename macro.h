@@ -1,5 +1,14 @@
-/* CMPSC 311, Spring 2013, Project 5 solution
- *
+/* CMPSC 311, Spring 2013, Project 8
+ * 
+ * Author: Jacob Jones
+ * Email: jaj5333@psu.edu
+ * 
+ * Author: Scott Cheloha
+ * Email: ssc5145@psu.edu
+ */
+
+/* Originally from:
+ * CMPSC 311, Spring 2013, Project 5 solution
  */
 
 #ifndef CMPSC311_MACRO_H
@@ -7,7 +16,7 @@
 
 void  macro_list_print(void);
 char *macro_body(char *name);
-int   macro_length(char *name);
+int   get_macro(char *name);
 void  macro_set(char *name, char *body);
 
 // assume in[] is constructed properly

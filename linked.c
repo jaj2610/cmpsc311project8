@@ -147,7 +147,7 @@ struct string_node *get_string(struct string_list * const list, const char *body
 
 int string_list_append_if_new(struct string_list * const list, const char *body)
 {
-  if (get_string(list, body) == NULL)
+  if (get_string(list, body) != NULL)
   { 
     return 1;
   }   // body is on the list already

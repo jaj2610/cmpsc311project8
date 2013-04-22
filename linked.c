@@ -267,16 +267,12 @@ void target_list_pop(struct target_list * const list, const char *name)
 
 struct target *get_target(struct target_list * const list, const char *name)
 {
-  struct target *prev = NULL;
-
   for (struct target *p = list->head; p != NULL; p = p->next)
   {
-    if (p->name == name)
+    if (strcmp(p->name, name) == 0)
     {
       return p;
     }
-
-    prev = p;
   }
 
   // return NULL if not found

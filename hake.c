@@ -38,7 +38,7 @@
 // option flags and option-arguments set from the command line
 char *prog;
 
-struct string_list *filenames = string_list_allocate();
+struct string_list *filenames;
 
 int v_flag = 0;
 int d_flag = 0;
@@ -70,6 +70,8 @@ int main(int argc, char *argv[])
 {
 	// for use with getopt(3)
 	int ch;
+
+	filenames = string_list_allocate();
 
 	extern char *optarg;
 	extern int optind;
@@ -171,7 +173,7 @@ int read_file(char *filename, int quiet)
 	// else { put filename on the list and continue }
 	if (string_list_append_if_new(filenames, filename) == 1)
 	{
-		return 1;
+		return 2;
 	}
 
 	if (v_flag)
@@ -457,7 +459,12 @@ void parse_include(char *buf, const char *filename, int line_number)
 		*q = '\0';		// remove closing quote
 	}
 
-	read_file(name_start, 0);
+	if ((read_file(name_start, 0)) == 2)
+	{
+		fprintf(stderr, "%s: %s:%d: error: cannot recursively include %s\n",
+				prog, filename, line_number, name_start);
+		exit(EXIT_FAILURE);
+	}
 }
 
 //------------------------------------------------------------------------------

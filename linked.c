@@ -124,16 +124,12 @@ void string_list_pop(struct string_list * const list, const char *body)
 
 struct string_node *get_string(struct string_list * const list, const char *body)
 {
-  struct string_node *prev = NULL;
-
   for (struct string_node *p = list->head; p != NULL; p = p->next)
   {
-    if (p->body == body)
+    if (strcmp(p->body,body) == 0)
     {
       return p;
     }
-
-    prev = p;
   }
 
   // return NULL if not found

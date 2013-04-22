@@ -16,7 +16,7 @@
 
 void  macro_list_print(void);
 char *macro_body(char *name);
-int   get_macro(char *name);
+static struct macro *get_macro(char *name);
 void  macro_set(char *name, char *body);
 
 // assume in[] is constructed properly

@@ -91,7 +91,7 @@ void macro_set(char *name, char *body)
 
   if (p == NULL)
   {
-    p = Malloc(sizeof(struct macro) __func__, __LINE__);
+    p = Malloc(sizeof(struct macro), __func__, __LINE__);
     p->next = macro_list.next;
     macro_list.next = p;
     p->name = Strdup(name, __func__, __LINE__);
@@ -100,7 +100,7 @@ void macro_set(char *name, char *body)
   }
   else
   {
-    Free(p->body);
+    Free(p->body, __func__, __LINE__);
     p->body = Strdup(body, __func__, __LINE__);
     p->body_length = strlen(body);
   }

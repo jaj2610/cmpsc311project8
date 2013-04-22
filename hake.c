@@ -223,7 +223,6 @@ void read_lines(char *filename, FILE *fp)
 	char expanded[MAXLINE+2];	// after macro expansion
 	char buffer[MAXLINE+2];	// working copy, safe to modify
 
-	char whsp[] = " \t\n\v\f\r";			// whitespace characters
 	int line_number = 0;
 	int recipe_line_number = 0;
 
@@ -255,34 +254,7 @@ void read_lines(char *filename, FILE *fp)
 
 		char *buf = buffer;
 
-		// skip past leading spaces (not tabs!)
-		while (*buf == ' ')
-		{
-			buf++; 
-		}
-
-		// remove comment, if present
-		char *p_hash = strchr(buf, '#');		// a comment starts with #
-		if (p_hash != NULL)
-		{
-			*p_hash = '\0'; // remove the comment
-		}
-
-		// remove trailing whitespace
-		int n = 0;					
-		while (buf[n] != '\0')
-		{
-			int n1 = strspn(&buf[n], whsp);		// buf[n .. n+n1-1] is whitespace
-			int n2 = strcspn(&buf[n + n1], whsp);	// buf[n+n1 .. n+n1+n2-1] is not
-
-			if (n2 == 0)
-			{
-				buf[n] = '\0';
-				break;
-			}
-
-			n += n1 + n2;
-		}
+		clean_up_whitespace(buf);
 
 		if (buf[0] == '\0')				// nothing left?
 		{
@@ -471,4 +443,40 @@ void parse_target(const char *buf)
 {
 	
 	return;
+}
+
+//------------------------------------------------------------------------------
+
+void clean_up_whitespace(char *buf)
+{
+	char whsp[] = " \t\n\v\f\r";			// whitespace characters
+
+	// skip past leading spaces (not tabs!)
+	while (*buf == ' ')
+	{
+		buf++; 
+	}
+
+	// remove comment, if present
+	char *p_hash = strchr(buf, '#');		// a comment starts with #
+	if (p_hash != NULL)
+	{
+		*p_hash = '\0'; // remove the comment
+	}
+
+	// remove trailing whitespace
+	int n = 0;					
+	while (buf[n] != '\0')
+	{
+		int n1 = strspn(&buf[n], whsp);		// buf[n .. n+n1-1] is whitespace
+		int n2 = strcspn(&buf[n + n1], whsp);	// buf[n+n1 .. n+n1+n2-1] is not
+
+		if (n2 == 0)
+		{
+			buf[n] = '\0';
+			break;
+		}
+
+		n += n1 + n2;
+	}
 }

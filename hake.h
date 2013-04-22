@@ -20,6 +20,8 @@
 
 extern char *prog;
 
+extern struct string_list *filenames;
+
 extern int v_flag;	// verbosity specified
 extern int d_flag;
 

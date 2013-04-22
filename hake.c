@@ -38,6 +38,8 @@
 // option flags and option-arguments set from the command line
 char *prog;
 
+struct string_list *filenames = string_list_allocate();
+
 int v_flag = 0;
 int d_flag = 0;
 int f_flag = 0;	// number of -f options supplied
@@ -158,12 +160,6 @@ int read_file(char *filename, int quiet)
 	}
 
 	// file names come from -f and include
-	static struct string_list * filenames = NULL;
-	if (filenames == NULL)
-	{
-		filenames = string_list_allocate();
-	}
-
 	// by construction, filenames is now not NULL
 
 	if (v_flag)

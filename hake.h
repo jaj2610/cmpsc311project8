@@ -15,6 +15,9 @@
 
 #include <stdio.h>
 
+// maximum line length in an input file (buffer size in read_lines)
+#define MAXLINE 4096
+
 extern char *prog;
 extern char *optarg;
 extern int optind;
@@ -34,7 +37,6 @@ int read_file(char *filename, int quiet);
 // fp comes from the file (named filename) opened by read_file() using fopen()
 void read_lines(char *filename, FILE *fp);
 
-// maximum line length in an input file (buffer size in read_lines)
-#define MAXLINE 4096
+int verify_tar_pre(const char * buf);
 
 #endif /* HAKE_H */

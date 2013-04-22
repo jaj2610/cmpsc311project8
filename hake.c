@@ -235,7 +235,11 @@ void read_lines(char *filename, FILE *fp)
 		original[MAXLINE+1] = '\0';
 
 		line_number++;
-		if (v_flag) printf("%s: %s: line %d: %s", prog, filename, line_number, original);
+		if (v_flag)
+		{
+			printf("%s: %s: line %d: %s",
+					prog, filename, line_number, original);
+		}
 
 		// assume original[] is constructed properly
 		// assume expanded[] is large enough
@@ -250,11 +254,13 @@ void read_lines(char *filename, FILE *fp)
 
 		char *buf = buffer;
 
+		// skip past leading spaces (not tabs!)
 		while (*buf == ' ')
 		{
-			buf++;			// skip past leading spaces (not tabs!)
+			buf++; 
 		}
 
+		// remove comment, if present
 		char *p_hash = strchr(buf, '#');		// a comment starts with #
 		if (p_hash != NULL)
 		{
@@ -312,7 +318,8 @@ void read_lines(char *filename, FILE *fp)
 			}
 			
 			have_target = true;
-			// (save this for a later project)
+			
+
 		}
 		else if (p_equal != NULL)
 		{
@@ -389,41 +396,42 @@ void read_lines(char *filename, FILE *fp)
 				{
 					fprintf(stderr, "%s: %s: line %d: include but no filename\n",
 							prog, filename, line_number);
+				}
+				
+				continue;
+			}
+			else if (*name_start == '\'' || *name_start == '"')		// quoted filename
+  			{
+				// find matching quote, remove it
+				char *q = name_start + 1;				// skip past ' or "
+				while (*q != *name_start && *q != '\0') 
+				{
+					q++;	// find end of string or line
+				}
+
+				if (*q == '\0')
+				{
+					fprintf(stderr, "%s: %s: line %d: file name error [%s]\n",
+							prog, filename, line_number, name_start);
 					continue;
 				}
-				else if (*name_start == '\'' || *name_start == '"')		// quoted filename
-  				{
-					// find matching quote, remove it
-					char *q = name_start + 1;				// skip past ' or "
-					while (*q != *name_start && *q != '\0') 
-					{
-						q++;	// find end of string or line
-					}
 
-					if (*q == '\0')
-					{
-						fprintf(stderr, "%s: %s: line %d: file name error [%s]\n",
-								prog, filename, line_number, name_start);
-						continue;
-					}
-					
-					name_start++;	// skip past opening quote
-					*q = '\0';		// remove closing quote
-				}
-
-				read_file(name_start, 0);
+				name_start++;	// skip past opening quote
+				*q = '\0';		// remove closing quote
 			}
-			else
+
+			read_file(name_start, 0);
+		}
+		else
+		{
+			if (v_flag) 
 			{
-				if (v_flag) 
-				{
-					printf("  diagnosis: something else\n");
-				}
-
-				have_target = false;
-				fprintf(stderr, "%s: %s: line %d: not recognized: %s",
-						prog, filename, line_number, original);
+				printf("  diagnosis: something else\n");
 			}
+
+			have_target = false;
+			fprintf(stderr, "%s: %s: line %d: not recognized: %s",
+					prog, filename, line_number, original);
 		}
 	}
 
@@ -438,3 +446,8 @@ void read_lines(char *filename, FILE *fp)
 
 //------------------------------------------------------------------------------
 
+int verify_tar_pre(const char * buf)
+{
+
+	return 1;
+}

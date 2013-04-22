@@ -16,8 +16,8 @@
 
 // global variables set from the command line
 
-extern char *prog;	// program name
-extern int verbose;	// -v option, extra output
+//extern char *prog;	// program name
+//extern int verbose;	// -v option, extra output
 			// -v can be repeated for even more output
 
   // verbosity levels

@@ -81,15 +81,15 @@ char *Strdup(const char *s, const char *func, const int line)
   return p;
 }
 
-FILE *Fopen(const char * restrict filename, const char * restrict mode,
+FILE *Fopen(const char * restrict filename, const char * restrict mode, int quiet,
 	const char *func, const int line)
 {
-  FILE *f = fopen(filename, mode);
-  if (f == NULL)
-  {
-      fprintf(stderr, "-%s: %s() at line %d failed: fopen(%s): %s\n",
-	prog, func, line, filename, strerror(errno));
-  }
+	FILE *f = fopen(filename, mode);
+	if (f == NULL && quiet == 0)
+	{
+		fprintf(stderr, "-%s: %s() at line %d failed: fopen(%s): %s\n",
+				prog, func, line, filename, strerror(errno));
+	}
 	else
 	{
   		if (d_flag)
@@ -97,7 +97,7 @@ FILE *Fopen(const char * restrict filename, const char * restrict mode,
 	  		fprintf(stderr, "-%s: %s() at line %d succeeded: Fopen() opened file %s\n",
 			  	prog, func, line, filename);
   		}
-}
+	}
 
   return f;
 }

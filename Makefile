@@ -1,6 +1,6 @@
 # Makefile for pr7 shell
 
-# CMPSC 311, Spring 2013, Project 7
+# CMPSC 311, Spring 2013, Project 8
 #
 # Author:		Jacob Jones
 # Email:		jaj5333@psu.edu
@@ -9,8 +9,8 @@
 # Email:		ssc5145@psu.edu
 #
  
-INC = hake.c wrapper.c macro.c cmpsc311.c names.c
-LIB = hake.h wrapper.h macro.h cmpsc311.c names.h
+INC = hake.c wrapper.c macro.c names.c
+LIB = hake.h wrapper.h macro.h names.h
 
 hake-gcc : $(INC) $(LIB)
 	gcc -std=c99 -Wall -Wextra -pedantic -o hake $(INC) $(LIB)

@@ -26,10 +26,12 @@
 #include <errno.h>
 #include <string.h>
 
-#include "cmpsc311.h"
-#include "names.h"
-//#include "macro.h"
+//#include "cmpsc311.h"
+//#include "names.h"
+#include "linked.h"
+#include "macro.h"
 #include "hake.h"
+#include "wrapper.h"
 
 //------------------------------------------------------------------------------
 
@@ -71,7 +73,7 @@ int main(int argc, char *argv[])
 	int ch;
 
 	// program name as actually used
-	prog = argv[0];
+	char *prog = argv[0];
 	/* In extremely strange situations, argv[0] could be NULL, or point to an
 	 * empty string.  Let's just ignore that for now.
 	 */
@@ -142,12 +144,8 @@ int main(int argc, char *argv[])
 //    the file before and don't need to read it again
 // quiet == 0 enables error messages if the file can't be opened
 // quiet == 1 suppresses error messages if the file can't be opened
-
 int read_file(char *filename, int quiet)
 {
-	verify(filename != NULL, "null arg filename");
-	verify(filename[0] != '\0', "empty arg filename");
-
 	if (v_flag)
 	{
 		fprintf(stderr, "%s: read_file(%s)\n", prog, filename);
@@ -185,13 +183,16 @@ int read_file(char *filename, int quiet)
 		return 1;
 	}
 
-	FILE *fp = fopen(filename, "r");
-	if (fp == NULL)
+	FILE *fp;
+	
+	if ((fp == Fopen(filename, "r", quiet, __func__, __LINE__)) == NULL)
 	{
 		if (quiet == 0)
 		{
 			fprintf(stderr, "%s: could not open input file %s: %s\n",
 					prog, filename, strerror(errno));
+
+			exit(EXIT_FAILURE);
 		}
 	
 		return 0;
@@ -199,7 +200,7 @@ int read_file(char *filename, int quiet)
 
 	read_lines(filename, fp);
 
-	if (fclose(fp) != 0)
+	if (Fclose(fp) != 0)
 	{
 		fprintf(stderr, "%s: could not close input file %s: %s\n",
 				prog, filename, strerror(errno));
@@ -212,10 +213,6 @@ int read_file(char *filename, int quiet)
 
 void read_lines(char *filename, FILE *fp)
 {
-	verify(filename != NULL, "null arg filename");
-	verify(filename[0] != '\0', "empty arg filename");
-	verify(fp != NULL, "null arg fp");
-
 	if (v_flag)
 	{
 		fprintf(stderr, "%s: read_lines(%s)\n", prog, filename);
@@ -428,6 +425,7 @@ void read_lines(char *filename, FILE *fp)
 						prog, filename, line_number, original);
 			}
 		}
+	}
 
 	if (ferror(fp))	// error when reading the file
 	{

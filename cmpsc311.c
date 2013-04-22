@@ -14,13 +14,14 @@
 #include <string.h>
 
 #include "cmpsc311.h"
+#include "hake.h"
 
 //------------------------------------------------------------------------------
 
 // global variables set from the command line
 
-char *prog = "[no name]";	// program name
-int verbose = 0;		// -v option, extra output
+//char *prog = "[no name]";	// program name
+//int verbose = 0;		// -v option, extra output
 				// -v can be repeated for even more output
 
   // verbosity levels
@@ -96,7 +97,7 @@ void *cmpsc311_malloc(size_t size,
       exit(EXIT_FAILURE);
     }
 
-  if (verbose > 2)
+  if (v_flag)
     { // which address?
       fprintf(stderr, "%s: malloc(%zd) at %p from %s line %d\n",
 	prog, size, p, func, line);
@@ -118,7 +119,7 @@ char *cmpsc311_strdup(const char *s,
       exit(EXIT_FAILURE);
     }
 
-  if (verbose > 2)
+  if (v_flag)
     { // which address?
       fprintf(stderr, "%s: strdup(%zd) at %p from %s line %d\n",
 	prog, strlen(s)+1, (void *) p, func, line);

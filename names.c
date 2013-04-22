@@ -18,17 +18,14 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "cmpsc311.h"
 #include "names.h"
+#include "hake.h"
+#include "wrapper.h"
 
 //------------------------------------------------------------------------------
 
 void list_names_init(struct list_names * const list, const char *listname)
 {
-  verify(list != NULL, "null arg list");
-  verify(listname != NULL, "null arg listname");
-  verify(listname[0] != '\0', "empty arg listname");
-
   list->head = list->tail = NULL;
   list->reference_count = 0;
   list->name = Strdup(listname);
@@ -38,9 +35,6 @@ void list_names_init(struct list_names * const list, const char *listname)
 
 struct list_names *list_names_allocate(const char *listname)
 {
-  verify(listname != NULL, "null arg listname");
-  verify(listname[0] != '\0', "empty arg listname");
-
   struct list_names *list = Malloc(sizeof(struct list_names));
 
   list->head = list->tail = NULL;
@@ -54,8 +48,6 @@ struct list_names *list_names_allocate(const char *listname)
 
 struct list_names *list_names_reference(struct list_names * const list)
 {
-  verify(list != NULL, "null arg list");
-
   list->reference_count++;
 
   return list;
@@ -65,8 +57,6 @@ struct list_names *list_names_reference(struct list_names * const list)
 
 void list_names_deallocate(struct list_names * const list)
 {
-  verify(list != NULL, "null arg list");
-
   if (--list->reference_count > 0)
     { return; }
 
@@ -87,8 +77,6 @@ void list_names_deallocate(struct list_names * const list)
 
 void list_names_print(const struct list_names * const list)
 {
-  verify(list != NULL, "null arg list");
-
   printf("list of names: %s\n", safe_string(list->name));
 
   if (list->head == NULL)
@@ -104,10 +92,6 @@ void list_names_print(const struct list_names * const list)
 
 void list_names_append(struct list_names * const list, const char *name)
 {
-  verify(list != NULL, "null arg list");
-  verify(name != NULL, "null arg name");
-  verify(name[0] != '\0', "empty arg name");
-
   struct name *p = Malloc(sizeof(struct name));
 
   p->next = NULL;
@@ -131,10 +115,6 @@ void list_names_append(struct list_names * const list, const char *name)
 
 int list_names_append_if_new(struct list_names * const list, const char *name)
 {
-  verify(list != NULL, "null arg list");
-  verify(name != NULL, "null arg name");
-  verify(name[0] != '\0', "empty arg name");
-
   for (struct name *p = list->head; p != NULL; p = p->next)
     {
       if (strcmp(p->name, name) == 0)
@@ -150,10 +130,6 @@ int list_names_append_if_new(struct list_names * const list, const char *name)
 
 void list_names_append_from_file(struct list_names * const list, const char *filename)
 {
-  verify(list != NULL, "null arg list");
-  verify(filename != NULL, "null arg filename");
-  verify(filename[0] != '\0', "empty arg filename");
-
   FILE *infile = NULL;
 
   if (strcmp(filename, "-") == 0)
@@ -233,9 +209,6 @@ void list_names_append_from_file(struct list_names * const list, const char *fil
 
 void list_names_iterate(struct list_names *list, void (*func)(void *))
 {
-  verify(list != NULL, "null arg list");
-  verify(func != NULL, "null arg func");
-
   for (struct name *p = list->head; p != NULL; p = p->next)
     {
       printf("calling func on %s\n", p->name);

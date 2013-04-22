@@ -1,4 +1,4 @@
-/* CMPSC 311, Spring 2013, Project 7
+/* CMPSC 311, Spring 2013, Project 8 
  * 
  * Author: Jacob Jones
  * Email: jaj5333@psu.edu
@@ -33,7 +33,7 @@ void Free(void *p,
 char *Strdup(const char *s,
 	const char *func, const int line);
 
-FILE *Fopen(const char * restrict filename, const char * restrict mode,
+FILE *Fopen(const char * restrict filename, const char * restrict mode, int quiet,
 	const char *func, const int line);
 
 int Fclose(FILE *stream,

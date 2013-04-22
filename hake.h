@@ -1,4 +1,4 @@
-/* CMPSC 311, Spring 2013, Project 7
+/* CMPSC 311, Spring 2013, Project 8
  * 
  * Author: Jacob Jones
  * Email: jaj5333@psu.edu
@@ -13,7 +13,9 @@
 #ifndef HAKE_H
 #define HAKE_H
 
-extern char prog;
+#include <stdio.h>
+
+extern char *prog;
 extern char *optarg;
 extern int optind;
 extern int optopt;

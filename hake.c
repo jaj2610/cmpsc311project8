@@ -13,7 +13,7 @@
  * 
  * Command-line Options
  *    -h           print help
- *    -v           verbose mode; enable extra printing; can be repeated
+ *    -v           v_flag mode; enable extra printing; can be repeated
  *    -f file      input filename; default is hakefile or Hakefile
  *
  */
@@ -28,23 +28,21 @@
 
 #include "cmpsc311.h"
 #include "names.h"
-#include "macro.h"
+//#include "macro.h"
 #include "hake.h"
 
 //------------------------------------------------------------------------------
 
-// return 1 if successful, 0 if not
-// "success" means the file could be opened for reading, or that we had seen
-//    the file before and don't need to read it again
-// quiet == 0 enables error messages if the file can't be opened
-// quiet == 1 suppresses error messages if the file can't be opened
-static int read_file(char *filename, int quiet);
+// option flags and option-arguments set from the command line
+int f_flag = 0;	// number of -f options supplied
+char *optarg;
+int optind;
+int optopt;
+int opterr;
 
-// fp comes from the file (named filename) opened by read_file() using fopen()
-static void read_lines(char *filename, FILE *fp);
+int v_flag = 0;
+int d_flag = 0;
 
-// maximum line length in an input file (buffer size in read_lines)
-#define MAXLINE 4096
 
 //------------------------------------------------------------------------------
 
@@ -54,7 +52,7 @@ static void usage(int status)
 	{
 		printf("usage: %s [-h] [-v] [-f file]\n", prog);
 		printf("  -h           print help\n");
-		printf("  -v           verbose mode; enable extra printing; can be repeated\n");
+		printf("  -v           v_flag mode; enable extra printing; can be repeated\n");
 		printf("  -f file      input filename; default is hakefile or Hakefile\n");
 	}
 	else
@@ -71,19 +69,12 @@ int main(int argc, char *argv[])
 {
 	// for use with getopt(3)
 	int ch;
-	extern char *optarg;
-	extern int optind;
-	extern int optopt;
-	extern int opterr;
 
 	// program name as actually used
 	prog = argv[0];
 	/* In extremely strange situations, argv[0] could be NULL, or point to an
 	 * empty string.  Let's just ignore that for now.
 	 */
-
-	// option flags and option-arguments set from the command line
-	int f_flag = 0;	// number of -f options supplied
 
 	// first pass, everything except -f options (let the -v options accumulate)
 	while ((ch = getopt(argc, argv, ":hvf:")) != -1)
@@ -94,7 +85,7 @@ int main(int argc, char *argv[])
 				usage(EXIT_SUCCESS);
 		 		break;
 			case 'v':
-				verbose++;
+				v_flag = 1;
 				break;
 			case 'f':
 				// later
@@ -152,80 +143,80 @@ int main(int argc, char *argv[])
 // quiet == 0 enables error messages if the file can't be opened
 // quiet == 1 suppresses error messages if the file can't be opened
 
-	static int read_file(char *filename, int quiet)
+int read_file(char *filename, int quiet)
+{
+	verify(filename != NULL, "null arg filename");
+	verify(filename[0] != '\0', "empty arg filename");
+
+	if (v_flag)
 	{
-		verify(filename != NULL, "null arg filename");
-		verify(filename[0] != '\0', "empty arg filename");
+		fprintf(stderr, "%s: read_file(%s)\n", prog, filename);
+	}
 
-		if (verbose > 0)
+	// file names come from -f and include
+	static struct list_names * filenames = NULL;
+	if (filenames == NULL)
+	{
+		filenames = list_names_allocate("filenames");
+	}
+
+	// by construction, filenames is now not NULL
+
+	if (v_flag)
+	{
+		list_names_print(filenames); 
+	}
+
+	// if (filename is on the list already) { return 1 }
+	// else { put filename on the list and continue }
+	if (list_names_append_if_new(filenames, filename) == 1)
+	{
+		return 1;
+	}
+
+	if (v_flag)
+	{
+		list_names_print(filenames);
+	}
+
+	if (strcmp(filename, "-") == 0)
+	{
+		read_lines("[stdin]", stdin);
+		return 1;
+	}
+
+	FILE *fp = fopen(filename, "r");
+	if (fp == NULL)
+	{
+		if (quiet == 0)
 		{
-			fprintf(stderr, "%s: read_file(%s)\n", prog, filename);
-		}
-
-		// file names come from -f and include
-		static struct list_names * filenames = NULL;
-		if (filenames == NULL)
-		{
-			filenames = list_names_allocate("filenames");
-		}
-
-		// by construction, filenames is now not NULL
-
-		if (verbose > 1)
-		{
-			list_names_print(filenames); 
-		}
-
-		// if (filename is on the list already) { return 1 }
-		// else { put filename on the list and continue }
-		if (list_names_append_if_new(filenames, filename) == 1)
-		{
-			return 1;
-		}
-
-		if (verbose > 0)
-		{
-			list_names_print(filenames);
-		}
-
-		if (strcmp(filename, "-") == 0)
-		{
-			read_lines("[stdin]", stdin);
-			return 1;
-		}
-
-		FILE *fp = fopen(filename, "r");
-		if (fp == NULL)
-		{
-			if (quiet == 0)
-			{
-				fprintf(stderr, "%s: could not open input file %s: %s\n",
-						prog, filename, strerror(errno));
-			}
-		
-			return 0;
-		}
-
-		read_lines(filename, fp);
-
-		if (fclose(fp) != 0)
-		{
-			fprintf(stderr, "%s: could not close input file %s: %s\n",
+			fprintf(stderr, "%s: could not open input file %s: %s\n",
 					prog, filename, strerror(errno));
 		}
+	
+		return 0;
+	}
 
-		return 1;
+	read_lines(filename, fp);
+
+	if (fclose(fp) != 0)
+	{
+		fprintf(stderr, "%s: could not close input file %s: %s\n",
+				prog, filename, strerror(errno));
+	}
+
+	return 1;
 }
 
 //------------------------------------------------------------------------------
 
-static void read_lines(char *filename, FILE *fp)
+void read_lines(char *filename, FILE *fp)
 {
 	verify(filename != NULL, "null arg filename");
 	verify(filename[0] != '\0', "empty arg filename");
 	verify(fp != NULL, "null arg fp");
 
-	if (verbose > 0)
+	if (v_flag)
 	{
 		fprintf(stderr, "%s: read_lines(%s)\n", prog, filename);
 	}
@@ -247,12 +238,12 @@ static void read_lines(char *filename, FILE *fp)
 		original[MAXLINE+1] = '\0';
 
 		line_number++;
-		if (verbose > 0) printf("%s: %s: line %d: %s", prog, filename, line_number, original);
+		if (v_flag) printf("%s: %s: line %d: %s", prog, filename, line_number, original);
 
 		// assume original[] is constructed properly
 		// assume expanded[] is large enough
 		macro_expand(original, expanded);
-		if (verbose > 0) 
+		if (v_flag) 
 		{
 			printf("%s: %s: line %d: %s", 
 					prog, filename, line_number, expanded);
@@ -300,7 +291,7 @@ static void read_lines(char *filename, FILE *fp)
 		if (buffer[0] == '\t')
 		{
 			recipe_line_number++;
-			if (verbose > 0)
+			if (v_flag)
 			{
 				printf("  diagnosis: recipe line %d\n", 
 						recipe_line_number);
@@ -318,7 +309,7 @@ static void read_lines(char *filename, FILE *fp)
 		else if (p_colon != NULL)
 		{
 			recipe_line_number = 0;
-			if (verbose > 0) 
+			if (v_flag) 
 			{
 				printf("  diagnosis: target-prerequisite\n");
 			}
@@ -328,7 +319,7 @@ static void read_lines(char *filename, FILE *fp)
 		}
 		else if (p_equal != NULL)
 		{
-			if (verbose > 0) printf("  diagnosis: macro definition\n");
+			if (v_flag) printf("  diagnosis: macro definition\n");
 			have_target = false;
 
 			// name = body
@@ -367,21 +358,21 @@ static void read_lines(char *filename, FILE *fp)
 			body_end++;
 			*body_end = '\0';
 
-			if (verbose > 1)
+			if (v_flag)
 			{
 				macro_list_print();
 			}
 
 			macro_set(name_start, body_start);
 
-  			if (verbose > 1)
+  			if (v_flag)
 			{
 				macro_list_print();
 			}
 		}
 		else if (strncmp("include", buf, 7) == 0)
 		{
-			if (verbose > 0)
+			if (v_flag)
 			{
 				printf("  diagnosis: include\n");
 			}
@@ -397,7 +388,7 @@ static void read_lines(char *filename, FILE *fp)
 			if (*name_start == '\0')
 			{
 				// following GNU Make, this is not an error
-				if (verbose > 0) 
+				if (v_flag) 
 				{
 					fprintf(stderr, "%s: %s: line %d: include but no filename\n",
 							prog, filename, line_number);
@@ -427,7 +418,7 @@ static void read_lines(char *filename, FILE *fp)
 			}
 			else
 			{
-				if (verbose > 0) 
+				if (v_flag) 
 				{
 					printf("  diagnosis: something else\n");
 				}

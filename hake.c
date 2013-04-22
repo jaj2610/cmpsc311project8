@@ -36,16 +36,11 @@
 //------------------------------------------------------------------------------
 
 // option flags and option-arguments set from the command line
-int f_flag = 0;	// number of -f options supplied
-char *optarg;
-int optind = 0;
-int optopt = 0;
-int opterr = 0;
-
 char *prog;
 
 int v_flag = 0;
 int d_flag = 0;
+int f_flag = 0;	// number of -f options supplied
 
 
 //------------------------------------------------------------------------------
@@ -74,6 +69,11 @@ int main(int argc, char *argv[])
 	// for use with getopt(3)
 	int ch;
 
+	extern char *optarg;
+	extern int optind;
+	extern int optopt;
+	extern int opterr;
+
 	// program name as actually used
 	prog = argv[0];
 	/* In extremely strange situations, argv[0] could be NULL, or point to an
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 	 */
 
 	// first pass, everything except -f options (let the -v options accumulate)
-	while ((ch = getopt(argc, argv, ":hvf:")) != -1)
+	while ((ch = getopt(argc, argv, ":hvdf:")) != -1)
 	{
 		switch (ch)
 		{
@@ -89,11 +89,12 @@ int main(int argc, char *argv[])
 				usage(EXIT_SUCCESS);
 		 		break;
 			case 'v':
-				printf("found v\n");
 				v_flag = 1;
 				break;
+			case 'd':
+				d_flag = 1;
+				break;
 			case 'f':
-				printf("found f\n");
 				// later
 				break;
 			case '?':
@@ -113,14 +114,12 @@ int main(int argc, char *argv[])
 
 	// scan the argv array again, from the beginning
 	optind = 1;
-	while ((ch = getopt(argc, argv, ":hvf:")) != -1)
+	while ((ch = getopt(argc, argv, ":hvdf:")) != -1)
 	{
-		printf("running second getopt loop\n");
 		switch (ch) 
 		{
 			case 'f':
 				f_flag++;		// number of -f options supplied
-				printf("%s\n", optarg);
 				(void) read_file(optarg, 0);
 				break;
 			default:
@@ -250,7 +249,7 @@ void read_lines(char *filename, FILE *fp)
 		// assume original[] is constructed properly
 		// assume expanded[] is large enough
 		macro_expand(original, expanded);
-		if (v_flag) 
+		if (v_flag)
 		{
 			printf("%s: %s: line %d: %s", 
 					prog, filename, line_number, expanded);

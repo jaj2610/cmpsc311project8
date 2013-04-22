@@ -19,10 +19,6 @@
 #define MAXLINE 4096
 
 extern char *prog;
-extern char *optarg;
-extern int optind;
-extern int optopt;
-extern int opterr;
 
 extern int v_flag;	// verbosity specified
 extern int d_flag;

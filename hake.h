@@ -39,4 +39,6 @@ void read_lines(char *filename, FILE *fp);
 
 int verify_tar_pre(const char * buf);
 
+void clean_up_whitespace(char *buf);
+
 #endif /* HAKE_H */

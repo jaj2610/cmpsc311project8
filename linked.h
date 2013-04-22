@@ -44,7 +44,7 @@ void string_list_append(struct string_list * const list, const char *body);
 void string_list_pop(struct string_list * const list, const char *body);
 
 /* get_string() returns a string with the body body */
-struct target *get_string(struct string_list * const list, const char *body);
+struct string_node *get_string(struct string_list * const list, const char *body);
 
 /* if (body is on the list already) { return 1 }
  * else { put body on the list and return 0 } */

@@ -99,7 +99,7 @@ void string_list_pop(struct string_list * const list, const char *body)
 
   for (struct string_node *p = list->head; p != NULL; p = p->next)
   {
-    if (p->name == name)
+    if (p->body == body)
      {
         if (prev == NULL)
         {
@@ -122,7 +122,7 @@ void string_list_pop(struct string_list * const list, const char *body)
 
 //------------------------------------------------------------------------------
 
-struct string *get_string(struct string_list * const list, const char *body)
+struct string_node *get_string(struct string_list * const list, const char *body)
 {
   struct string_node *prev = NULL;
 
@@ -145,9 +145,9 @@ struct string *get_string(struct string_list * const list, const char *body)
 // if (body is on the list already) { return 1 }
 // else { put body on the list and return 0 }
 
-int string_list_append_if_new(struct list_bodys * const list, const char *body)
+int string_list_append_if_new(struct string_list * const list, const char *body)
 {
-  if (get_string(body) == 0)
+  if (get_string(list, body) == NULL)
   { 
     return 1;
   }   // body is on the list already
@@ -173,7 +173,7 @@ struct target_list *target_list_allocate(void)
 void target_list_deallocate(struct target_list * const list)
 {
 	struct target *prev = NULL;
-	for (struct string_node *p = list->head; p != NULL; p = p->next)
+	for (struct target *p = list->head; p != NULL; p = p->next)
 	{
       Free(prev, __func__, __LINE__); // Free(NULL) is harmless
       Free(p->name, __func__, __LINE__);

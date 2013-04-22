@@ -292,67 +292,18 @@ void read_lines(char *filename, FILE *fp)
 			
 			have_target = true;
 			
-			if (verify_tar_pre(buf) != 1)
-			{
-				fprintf(stderr, "%s: error in file %s: incorrect target syntax at line %d\n",
-						prog, filename, line_number);
-				exit(EXIT_FAILURE);
-			}
-
 			parse_target(buf);
 		}
 		else if (p_equal != NULL)
 		{
-			if (v_flag) printf("  diagnosis: macro definition\n");
+			if (v_flag) 
+			{
+				printf("  diagnosis: macro definition\n");
+			}
+
 			have_target = false;
 
-			// name = body
-			// *p_equal is '='
-			char *name_start = buf;
-			while (*name_start == ' ' || *name_start == '\t') // skip past spaces and tabs
-			{
-				name_start++;
-			}
-
-			char *name_end = p_equal-1;
-  			while (*name_end == ' ' || *name_end == '\t')
-			{
-				name_end--;
-			}
-
-			name_end++;
-			*name_end = '\0';
-			char *body_start = p_equal+1;
-
-			while (*body_start == ' ' || *body_start == '\t')
-			{
-				body_start++;
-			}
-
-			char *body_end = body_start;
-			while (*body_end != '\0')       // end of string
-			{
-				body_end++;
-			}
-			while (*body_end == ' ' || *body_end == '\t')
-			{
-				body_end--;
-			}
-
-			body_end++;
-			*body_end = '\0';
-
-			if (v_flag)
-			{
-				macro_list_print();
-			}
-
-			macro_set(name_start, body_start);
-
-  			if (v_flag)
-			{
-				macro_list_print();
-			}
+			parse_macro(buf, line_number);
 		}
 		else if (strncmp("include", buf, 7) == 0)
 		{
@@ -433,15 +384,72 @@ void read_lines(char *filename, FILE *fp)
 
 //------------------------------------------------------------------------------
 
-int verify_tar_pre(const char * buf)
-{
-	
-	return 1;
-}
-
 void parse_target(const char *buf)
 {
 	
+	return;
+}
+
+//------------------------------------------------------------------------------
+
+void parse_macro(char *buf, int line_number);
+{
+	// name = body
+	// *p_equal is '='
+	char *name_start = buf;
+	while (*name_start == ' ' || *name_start == '\t') // skip past spaces and tabs
+	{
+		name_start++;
+	}
+
+	// check for empty macro name
+	if (name_start == p_equal)
+	{
+		fprintf(stderr, "%s: %s:%d: error: empty macro name\n",
+				prog, filename, line_number);
+		exit(EXIT_FAILURE);
+	}
+
+	char *name_end = p_equal-1;
+	while (*name_end == ' ' || *name_end == '\t')
+	{
+		name_end--;
+	}
+
+	name_end++;
+	*name_end = '\0';
+	char *body_start = p_equal+1;
+
+	while (*body_start == ' ' || *body_start == '\t')
+	{
+		body_start++;
+	}
+
+	char *body_end = body_start;
+	while (*body_end != '\0')       // end of string
+	{
+		body_end++;
+	}
+	while (*body_end == ' ' || *body_end == '\t')
+	{
+		body_end--;
+	}
+
+	body_end++;
+	*body_end = '\0';
+
+	if (v_flag)
+	{
+		macro_list_print();
+	}
+
+	macro_set(name_start, body_start);
+
+	if (v_flag)
+	{
+		macro_list_print();
+	}
+
 	return;
 }
 

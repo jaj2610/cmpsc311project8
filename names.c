@@ -24,31 +24,11 @@
 
 //------------------------------------------------------------------------------
 
-void list_names_init(struct list_names * const list, const char *listname)
-{
-  list->head = list->tail = NULL;
-  list->reference_count = 0;
-  list->name = Strdup(listname);
-}
-
-//------------------------------------------------------------------------------
-
-struct list_names *list_names_allocate(const char *listname)
+struct list_names *list_names_allocate(void)
 {
   struct list_names *list = Malloc(sizeof(struct list_names));
 
   list->head = list->tail = NULL;
-  list->reference_count = 0;
-  list->name = Strdup(listname);
-
-  return list;
-}
-
-//------------------------------------------------------------------------------
-
-struct list_names *list_names_reference(struct list_names * const list)
-{
-  list->reference_count++;
 
   return list;
 }
@@ -57,9 +37,6 @@ struct list_names *list_names_reference(struct list_names * const list)
 
 void list_names_deallocate(struct list_names * const list)
 {
-  if (--list->reference_count > 0)
-    { return; }
-
   struct name *prev = NULL;
   for (struct name *p = list->head; p != NULL; p = p->next)
     {

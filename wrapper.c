@@ -16,8 +16,7 @@
 #include <sys/types.h>
 
 #include "wrapper.h"
-#include "pr7.h"
-
+#include "hake.h"
 
 //------------------------------------------------------------------------------
 

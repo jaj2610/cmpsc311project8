@@ -38,9 +38,11 @@
 // option flags and option-arguments set from the command line
 int f_flag = 0;	// number of -f options supplied
 char *optarg;
-int optind;
-int optopt;
-int opterr;
+int optind = 0;
+int optopt = 0;
+int opterr = 0;
+
+char *prog;
 
 int v_flag = 0;
 int d_flag = 0;
@@ -73,7 +75,7 @@ int main(int argc, char *argv[])
 	int ch;
 
 	// program name as actually used
-	char *prog = argv[0];
+	prog = argv[0];
 	/* In extremely strange situations, argv[0] could be NULL, or point to an
 	 * empty string.  Let's just ignore that for now.
 	 */
@@ -87,9 +89,11 @@ int main(int argc, char *argv[])
 				usage(EXIT_SUCCESS);
 		 		break;
 			case 'v':
+				printf("found v\n");
 				v_flag = 1;
 				break;
 			case 'f':
+				printf("found f\n");
 				// later
 				break;
 			case '?':
@@ -111,10 +115,12 @@ int main(int argc, char *argv[])
 	optind = 1;
 	while ((ch = getopt(argc, argv, ":hvf:")) != -1)
 	{
+		printf("running second getopt loop\n");
 		switch (ch) 
 		{
 			case 'f':
 				f_flag++;		// number of -f options supplied
+				printf("%s\n", optarg);
 				(void) read_file(optarg, 0);
 				break;
 			default:

@@ -97,8 +97,9 @@ void string_list_pop(struct string_list * const list, const char *body)
 {
 	struct string_node *p = get_string(list, body);
 
-  Free(p->body, __func__, __LINE__);
+	Free(p->body, __func__, __LINE__);
 	Free(p, __func__, __LINE__);
+
 }
 
 //------------------------------------------------------------------------------
@@ -168,9 +169,9 @@ struct target_list *target_list_allocate(void)
 
 void target_list_deallocate(struct target_list * const list)
 {
- struct string_node *prev = NULL;
-  for (struct string_node *p = list->head; p != NULL; p = p->next)
-  {
+	struct target *prev = NULL;
+	for (struct string_node *p = list->head; p != NULL; p = p->next)
+	{
       Free(prev, __func__, __LINE__); // Free(NULL) is harmless
       Free(p->name, __func__, __LINE__);
       string_list_deallocate(p->prereqs);

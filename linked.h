@@ -49,7 +49,7 @@ struct target *get_string(struct string_list * const list, const char *body);
 /* if (body is on the list already) { return 1 }
  * else { put body on the list and return 0 } */
 
-int string_list_append_if_new(struct list_bodys * const list, const char *body);
+int string_list_append_if_new(struct string_list * const list, const char *body);
 
 //------------------------------------------------------------------------------
 
@@ -67,7 +67,7 @@ struct target
 struct target_list
 {
 	struct target *head;
-	struct target *tail
+	struct target *tail;
 };
 
 //------------------------------------------------------------------------------

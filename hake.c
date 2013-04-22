@@ -186,7 +186,7 @@ int read_file(char *filename, int quiet)
 
 	FILE *fp;
 	
-	if ((fp == Fopen(filename, "r", quiet, __func__, __LINE__)) == NULL)
+	if ((fp = Fopen(filename, "r", quiet, __func__, __LINE__)) == NULL)
 	{
 		if (quiet == 0)
 		{
@@ -201,7 +201,7 @@ int read_file(char *filename, int quiet)
 
 	read_lines(filename, fp);
 
-	if (Fclose(fp) != 0)
+	if (Fclose(fp, __func__, __LINE__) != 0)
 	{
 		fprintf(stderr, "%s: could not close input file %s: %s\n",
 				prog, filename, strerror(errno));
@@ -292,7 +292,7 @@ void read_lines(char *filename, FILE *fp)
 			
 			have_target = true;
 			
-			parse_target(buf);
+			parse_target(buf, line_number);
 		}
 		else if (p_equal != NULL)
 		{
@@ -303,11 +303,18 @@ void read_lines(char *filename, FILE *fp)
 
 			have_target = false;
 
-			parse_macro(buf, line_number);
+			parse_macro(buf, p_equal, filename, line_number);
 		}
 		else if (strncmp("include", buf, 7) == 0)
 		{
-			parse_include(buf, line_number);
+			if (v_flag)
+			{
+				printf("  diagnosis: include\n");
+			}
+
+			have_target = false;
+
+			parse_include(buf, filename, line_number);
 		}
 		else
 		{
@@ -333,7 +340,7 @@ void read_lines(char *filename, FILE *fp)
 
 //------------------------------------------------------------------------------
 
-void parse_target(const char *buf)
+void parse_target(char *buf, int line_number)
 {
 	
 	return;
@@ -341,7 +348,7 @@ void parse_target(const char *buf)
 
 //------------------------------------------------------------------------------
 
-void parse_macro(char *buf, int line_number);
+void parse_macro(char *buf, char *p_equal, const char *filename, int line_number)
 {
 	// name = body
 	// *p_equal is '='
@@ -402,14 +409,8 @@ void parse_macro(char *buf, int line_number);
 	return;
 }
 
-void parse_include(char *buf, int line_number)
+void parse_include(char *buf, const char *filename, int line_number)
 {
-	if (v_flag)
-	{
-		printf("  diagnosis: include\n");
-	}
-
-	have_target = false;
 	char *name_start = buf + 7;				// skip past "include"
 	
 	while (*name_start == ' ' || *name_start == '\t')	// skip past spaces and tabs
@@ -417,7 +418,7 @@ void parse_include(char *buf, int line_number)
 		name_start++;
 	}
 
-	if (*name_start == buf + 7)
+	if (name_start == buf + 7)
 	{
 		fprintf(stderr, "%s: %s:%d: error: no space between include and filename\n",
 				prog, filename, line_number);
@@ -433,7 +434,7 @@ void parse_include(char *buf, int line_number)
 					prog, filename, line_number);
 		}
 		
-		continue;
+		return;
 	}
 	else if (*name_start == '\'' || *name_start == '"')		// quoted filename
 		{
@@ -446,9 +447,9 @@ void parse_include(char *buf, int line_number)
 
 		if (*q == '\0')
 		{
-			fprintf(stderr, "%s: %s: line %d: file name error [%s]\n",
+			fprintf(stderr, "%s: %s:%d: file name error [%s]\n",
 					prog, filename, line_number, name_start);
-			continue;
+			exit(EXIT_FAILURE);
 		}
 
 		name_start++;	// skip past opening quote

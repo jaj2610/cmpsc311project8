@@ -9,8 +9,8 @@
 # Email:		ssc5145@psu.edu
 #
  
-INC = hake.c wrapper.c macro.c names.c
-LIB = hake.h wrapper.h macro.h names.h
+INC = hake.c wrapper.c macro.c linked.c
+LIB = hake.h wrapper.h macro.h linked.h
 
 hake-gcc : $(INC) $(LIB)
 	gcc -std=c99 -Wall -Wextra -pedantic -o hake $(INC) $(LIB)

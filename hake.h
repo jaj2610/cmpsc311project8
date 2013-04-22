@@ -37,11 +37,11 @@ int read_file(char *filename, int quiet);
 // fp comes from the file (named filename) opened by read_file() using fopen()
 void read_lines(char *filename, FILE *fp);
 
-int verify_tar_pre(const char *buf);
+void parse_target(char *buf, int line_number);
 
-void parse_target(const char *buf);
+void parse_macro(char *buf, char *p_equal, const char *filename, int line_number);
 
-void parse_include(char *buf, int line_number);
+void parse_include(char *buf, const char *filename, int line_number);
 
 void clean_up_whitespace(char *buf);
 

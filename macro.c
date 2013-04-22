@@ -54,7 +54,7 @@ void macro_list_print(void)
 
 //--------------------------------------------------------------------------------
 
-static struct macro *get_macro(char *name)
+struct macro *get_macro(char *name)
 {
   for (struct macro *p = macro_list.next; p != NULL; p = p->next)
     {

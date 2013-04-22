@@ -152,29 +152,29 @@ int read_file(char *filename, int quiet)
 	}
 
 	// file names come from -f and include
-	static struct list_names * filenames = NULL;
+	static struct string_list * filenames = NULL;
 	if (filenames == NULL)
 	{
-		filenames = list_names_allocate("filenames");
+		filenames = string_list_allocate();
 	}
 
 	// by construction, filenames is now not NULL
 
 	if (v_flag)
 	{
-		list_names_print(filenames); 
+		string_list_print(filenames); 
 	}
 
 	// if (filename is on the list already) { return 1 }
 	// else { put filename on the list and continue }
-	if (list_names_append_if_new(filenames, filename) == 1)
+	if (string_list_append_if_new(filenames, filename) == 1)
 	{
 		return 1;
 	}
 
 	if (v_flag)
 	{
-		list_names_print(filenames);
+		string_list_print(filenames);
 	}
 
 	if (strcmp(filename, "-") == 0)

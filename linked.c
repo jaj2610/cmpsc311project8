@@ -103,13 +103,13 @@ void string_list_pop(struct string_list * const list, const char *body)
 
 //------------------------------------------------------------------------------
 
-struct string *get_string(struct string_list * const list, const char *name)
+struct string *get_string(struct string_list * const list, const char *body)
 {
   struct string_node *prev = NULL;
 
   for (struct string_node *p = list->head; p != NULL; p = p->next)
   {
-    if (p->name == name)
+    if (p->body == body)
     {
       if (prev == NULL)
       {
@@ -123,7 +123,7 @@ struct string *get_string(struct string_list * const list, const char *name)
       // d_flag or v_flag ?
       /*
       printf("\n--%s: %s (%s) has terminated.\n",
-        prog, p->command, p->name);
+        prog, p->command, p->body);
       */
 
       return p;
@@ -134,6 +134,23 @@ struct string *get_string(struct string_list * const list, const char *name)
 
   // return NULL if not found
   return NULL;
+}
+
+//------------------------------------------------------------------------------
+
+// if (body is on the list already) { return 1 }
+// else { put body on the list and return 0 }
+
+int string_list_append_if_new(struct list_bodys * const list, const char *body)
+{
+  if (get_string(body) == 0)
+  { 
+    return 1;
+  }   // body is on the list already
+
+  string_list_append(list, body);
+
+  return 0;
 }
 
 //------------------------------------------------------------------------------

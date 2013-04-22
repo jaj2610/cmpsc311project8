@@ -26,17 +26,11 @@ struct name
 struct list_names
 {
   struct name *head;	// NULL indicates empty list
-  struct name *tail;
-  int reference_count;	// for delayed deallocation of the list
-  char *name;		// from strdup()
-};
+  struct name *tail;};
 
 //------------------------------------------------------------------------------
 
-void list_names_init(struct list_names * const list, const char *listname);
-
-struct list_names *list_names_allocate(const char *listname);
-struct list_names *list_names_reference(struct list_names * const list);
+struct list_names *list_names_allocate(void);
 void list_names_deallocate(struct list_names * const list);
 
 void list_names_print(const struct list_names * const list);

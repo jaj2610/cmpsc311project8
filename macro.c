@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cmpsc311.h"
+#include "wrapper.h"
 #include "macro.h"
 
 //--------------------------------------------------------------------------------

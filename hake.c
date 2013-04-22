@@ -356,58 +356,7 @@ void read_lines(char *filename, FILE *fp)
 		}
 		else if (strncmp("include", buf, 7) == 0)
 		{
-			if (v_flag)
-			{
-				printf("  diagnosis: include\n");
-			}
-
-			have_target = false;
-			char *name_start = buf + 7;				// skip past "include"
-			
-			while (*name_start == ' ' || *name_start == '\t')	// skip past spaces and tabs
-			{
-				name_start++;
-			}
-
-			if (*name_start == buf + 7)
-			{
-				fprintf(stderr, "%s: %s:%d: error: no space between include and filename\n",
-						prog, filename, line_number);
-				exit(EXIT_FAILURE);
-			}
-
-			if (*name_start == '\0')
-			{
-				// following GNU Make, this is not an error
-				if (v_flag) 
-				{
-					fprintf(stderr, "%s: %s:%d: error: include but no filename\n",
-							prog, filename, line_number);
-				}
-				
-				continue;
-			}
-			else if (*name_start == '\'' || *name_start == '"')		// quoted filename
-  			{
-				// find matching quote, remove it
-				char *q = name_start + 1;				// skip past ' or "
-				while (*q != *name_start && *q != '\0') 
-				{
-					q++;	// find end of string or line
-				}
-
-				if (*q == '\0')
-				{
-					fprintf(stderr, "%s: %s: line %d: file name error [%s]\n",
-							prog, filename, line_number, name_start);
-					continue;
-				}
-
-				name_start++;	// skip past opening quote
-				*q = '\0';		// remove closing quote
-			}
-
-			read_file(name_start, 0);
+			parse_include(buf, line_number);
 		}
 		else
 		{
@@ -443,6 +392,62 @@ void parse_target(const char *buf)
 {
 	
 	return;
+}
+
+void parse_include(char *buf, int line_number)
+{
+	if (v_flag)
+	{
+		printf("  diagnosis: include\n");
+	}
+
+	have_target = false;
+	char *name_start = buf + 7;				// skip past "include"
+	
+	while (*name_start == ' ' || *name_start == '\t')	// skip past spaces and tabs
+	{
+		name_start++;
+	}
+
+	if (*name_start == buf + 7)
+	{
+		fprintf(stderr, "%s: %s:%d: error: no space between include and filename\n",
+				prog, filename, line_number);
+		exit(EXIT_FAILURE);
+	}
+
+	if (*name_start == '\0')
+	{
+		// following GNU Make, this is not an error
+		if (v_flag) 
+		{
+			fprintf(stderr, "%s: %s:%d: error: include but no filename\n",
+					prog, filename, line_number);
+		}
+		
+		continue;
+	}
+	else if (*name_start == '\'' || *name_start == '"')		// quoted filename
+		{
+		// find matching quote, remove it
+		char *q = name_start + 1;				// skip past ' or "
+		while (*q != *name_start && *q != '\0') 
+		{
+			q++;	// find end of string or line
+		}
+
+		if (*q == '\0')
+		{
+			fprintf(stderr, "%s: %s: line %d: file name error [%s]\n",
+					prog, filename, line_number, name_start);
+			continue;
+		}
+
+		name_start++;	// skip past opening quote
+		*q = '\0';		// remove closing quote
+	}
+
+	read_file(name_start, 0);
 }
 
 //------------------------------------------------------------------------------

@@ -41,6 +41,8 @@ int verify_tar_pre(const char *buf);
 
 void parse_target(const char *buf);
 
+void parse_include(char *buf, int line_number);
+
 void clean_up_whitespace(char *buf);
 
 #endif /* HAKE_H */

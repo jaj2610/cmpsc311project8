@@ -210,7 +210,7 @@ void target_list_print(const struct target_list * const list)
 
 //------------------------------------------------------------------------------
 
-void target_list_append(struct target_list * const list, const char *name)
+struct target *target_list_append(struct target_list * const list, const char *name)
 {
   struct target *p = Malloc(sizeof(struct target), __func__, __LINE__);
 
@@ -228,6 +228,8 @@ void target_list_append(struct target_list * const list, const char *name)
     list->tail->next = p;
     list->tail = p;
   }
+
+  return p;
 }
 
 //------------------------------------------------------------------------------

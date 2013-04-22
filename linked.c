@@ -95,10 +95,28 @@ void string_list_append(struct string_list * const list, const char *body)
 
 void string_list_pop(struct string_list * const list, const char *body)
 {
-	struct string_node *p = get_string(list, body);
+	struct string_node *prev = NULL;
 
-	Free(p->body, __func__, __LINE__);
-	Free(p, __func__, __LINE__);
+  for (struct string_node *p = list->head; p != NULL; p = p->next)
+  {
+    if (p->name == name)
+     {
+        if (prev == NULL)
+        {
+          list->head = p->next;
+        }
+        else
+        {
+          prev->next = p->next;
+        }
+
+        Free(p->body, __func__, __LINE__);
+        Free(p, __func__, __LINE__);
+        return;
+    }
+
+    prev = p;
+  }
 
 }
 
@@ -112,21 +130,6 @@ struct string *get_string(struct string_list * const list, const char *body)
   {
     if (p->body == body)
     {
-      if (prev == NULL)
-      {
-        list->head = p->next;
-      }
-      else
-      {
-        prev->next = p->next;
-      }
-
-      // d_flag or v_flag ?
-      /*
-      printf("\n--%s: %s (%s) has terminated.\n",
-        prog, p->command, p->body);
-      */
-
       return p;
     }
 
@@ -237,18 +240,6 @@ struct target *target_list_append(struct target_list * const list, const char *n
 
 void target_list_pop(struct target_list * const list, const char *name)
 {
-  struct target *p = get_target(list, name);
-
-  Free(p->name, __func__, __LINE__);
-  string_list_deallocate(p->prereqs);
-  string_list_deallocate(p->recipes);
-  Free(p, __func__, __LINE__);
-}
-
-//------------------------------------------------------------------------------
-
-struct target *get_target(struct target_list * const list, const char *name)
-{
   struct target *prev = NULL;
 
   for (struct target *p = list->head; p != NULL; p = p->next)
@@ -264,12 +255,28 @@ struct target *get_target(struct target_list * const list, const char *name)
         prev->next = p->next;
       }
 
-      // d_flag or v_flag ?
-      /*
-      printf("\n--%s: %s (%s) has terminated.\n",
-        prog, p->command, p->name);
-      */
+      Free(p->name, __func__, __LINE__);
+      string_list_deallocate(p->prereqs);
+      string_list_deallocate(p->recipes);
+      Free(p, __func__, __LINE__);
 
+      return;
+    }
+
+    prev = p;
+  }  
+}
+
+//------------------------------------------------------------------------------
+
+struct target *get_target(struct target_list * const list, const char *name)
+{
+  struct target *prev = NULL;
+
+  for (struct target *p = list->head; p != NULL; p = p->next)
+  {
+    if (p->name == name)
+    {
       return p;
     }
 

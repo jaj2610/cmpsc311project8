@@ -20,7 +20,15 @@
 
 extern char *prog;
 
+/* A list of filenames recognized by hake.
+ * Includes the initial hakefile (or whatever the user
+ * specifies with -f) and any included files.
+ */
 extern struct string_list *filenames;
+
+/* A global list of targets parsed by hake.
+ */
+extern struct target_list *parsed_targets;
 
 extern int v_flag;	// verbosity specified
 extern int d_flag;
@@ -35,7 +43,7 @@ int read_file(char *filename, int quiet);
 // fp comes from the file (named filename) opened by read_file() using fopen()
 void read_lines(char *filename, FILE *fp);
 
-void parse_target(char *buf, int line_number);
+void parse_target(char *buf, char *p_colon, int line_number);
 
 void parse_macro(char *buf, char *p_equal, const char *filename, int line_number);
 

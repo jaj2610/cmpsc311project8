@@ -39,6 +39,8 @@
 char *prog;
 
 struct string_list *filenames;
+struct target_list *parsed_targets;
+
 
 int v_flag = 0;
 int d_flag = 0;
@@ -72,6 +74,8 @@ int main(int argc, char *argv[])
 	int ch;
 
 	filenames = string_list_allocate();
+	parsed_targets = target_list_allocate();
+
 
 	extern char *optarg;
 	extern int optind;
@@ -343,9 +347,63 @@ void read_lines(char *filename, FILE *fp)
 
 //------------------------------------------------------------------------------
 
-void parse_target(char *buf, int line_number)
+void parse_target(char *buf, char *p_colon, int line_number)
 {
+	// format:
+	// 	target : prerequisites
 	
+	/* Parse target name */
+	char *name_start = buf;
+	while (*name_start == ' ' || *name_start == '\t') // skip past spaces and tabs
+	{
+		name_start++;
+	}
+
+	// Check for empty target name
+	if (name_start == p_colon)
+	{
+		fprintf(stderr, "%s: %s:%d: error: empty target name\n",
+				prog, filename, line_number);
+		exit(EXIT_FAILURE);
+	}
+
+	char *name_end = p_equal-1;
+	while (*name_end == ' ' || *name_end == '\t')
+	{
+		name_end--;
+	}
+
+	name_end++;
+	*name_end = '\0';
+
+	/* If the name does not already exist,
+	 * append new target with name to global parsed targets list.
+	 * See hake.h for global list declaration. 
+	 */
+	struct target *tar;
+	if ((tar = get_target(parsed_targets, name_start)) == NULL)
+	{
+		tar = target_list_append(parsed_targets, name_start);
+	}
+
+	/* Parse the prerequisites separately,
+	 * and add them to the new_target struct
+	 * as a linked list of c-strings. 
+	 */
+	char *prereqs_start = p_colon+1;
+	
+	parse_prereqs(prereqs_start, tar);
+
+	/* If verbose output is specified,
+	 * print the current list of targets.
+	 */
+	if (v_flag)
+	{
+		printf("%s: Parsed target %s\n",
+				prog, name_start);
+		target_list_print(parsed_targets);
+	}
+
 	return;
 }
 

@@ -1,9 +1,9 @@
 To-Do List:
 
--macro expansion
--parse target_prereq lines: create targets
--multiple filenames?
--parse recipes
+DONE	macro expansion
+Scott	parse target_prereq lines: create targets
+DONE	multiple filenames?
+Scott	parse recipes
 -write logic to determine what to print
 -test cases?
 -readme: time allocation, etc.

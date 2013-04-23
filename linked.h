@@ -82,7 +82,7 @@ void target_list_deallocate(struct target_list * const list);
 void target_list_print(const struct target_list * const list);
 
 /* target_list_append() adds a node to a target_list */
-struct target *target_list_append(struct target_list * const list, const char *body);
+struct target *target_list_append(struct target_list * const list, const char *name);
 
 /* target_list_allocate() removes a node from a target_list */
 void target_list_pop(struct target_list * const list, const char *body);

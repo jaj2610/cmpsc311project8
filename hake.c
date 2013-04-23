@@ -409,6 +409,53 @@ void parse_target(char *buf, char *p_colon, int line_number)
 
 //------------------------------------------------------------------------------
 
+void parse_prereqs(char *prereqs, struct target *newtarget)
+{
+  char *p_equal, p_colon;
+
+  if ((p_equal = strchr(prereqs, '=')) != NULL)
+  {
+  	// error
+  	return;
+  }
+  else if((p_colon = strchr(prereqs, ':')) != NULL)
+  {
+  	// error
+  	return;
+  }
+
+  // run through all of prereqs until endline
+  while (*prereqs != '\n')
+  {
+  	char *p_start = prereqs;
+
+  	// skip whitespace and tabs at beginning of p_start
+  	while (*p_start == ' ' || *p_start == '\t')
+  	{
+  		p_start++;
+  	}
+
+  	char *p_end = p_start;
+
+  	// set p_end to next whitespace/tab after p_start
+  	while (*p_end != ' ' && *p_end != '\t')
+  	{
+  		p_end++;
+  	}
+
+  	// p_end to '\0' to end p_start
+  	*p_end = '\0';
+
+  	// increase prereqs to after already accounted for prereq
+  	prereqs += strlen(p_start);
+
+  	// append to newtarget's prereqs list
+  	string_list_append_if_new(newtarget->prereqs, name_start);
+  }
+}
+
+//------------------------------------------------------------------------------
+
 void parse_macro(char *buf, char *p_equal, const char *filename, int line_number)
 {
 	// name = body
@@ -560,3 +607,4 @@ void clean_up_whitespace(char *buf)
 		n += n1 + n2;
 	}
 }
+

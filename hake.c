@@ -206,7 +206,7 @@ int read_file(char *filename, int quiet)
 		return 0;
 	}
 
-	read_lines(filename, fp);
+	int read_lines_status = read_lines(filename, fp);
 
 	if (Fclose(fp, __func__, __LINE__) != 0)
 	{
@@ -214,14 +214,14 @@ int read_file(char *filename, int quiet)
 				prog, filename, strerror(errno));
 	}
 
-	return 1;
+	return read_lines_status;
 }
 
 //------------------------------------------------------------------------------
 
-void read_lines(char *filename, FILE *fp)
+int read_lines(char *filename, FILE *fp)
 {
-	if (v_flag)
+	if (d_flag)
 	{
 		fprintf(stderr, "%s: read_lines(%s)\n", prog, filename);
 	}
@@ -236,36 +236,18 @@ void read_lines(char *filename, FILE *fp)
 	struct target *current_target = NULL;
 	struct string_list *current_recipes = NULL;
 
+	int error_count = 0;
+
 	while (fgets(original, MAXLINE, fp) != NULL)
 	{
-		/* Clean up targets and recipes */
-		if (have_target && current_recipes == NULL)
-		{
-			current_recipes = string_list_allocate();
-		}
-		else if (!have_target && current_recipes != NULL)
-		{
-			if (current_recipes->head != NULL)
-			{
-				string_list_deallocate(current_target->recipes);
-				current_target->recipes = current_recipes;
-				current_target = NULL;
-				current_recipes = NULL;
-			}
-		}
-
-		// it is possible that the input line was too long, so terminate the string cleanly
+		// it is possible that the input line was too long,
+		// so terminate the string cleanly
 		original[MAXLINE] = '\n';
 		original[MAXLINE+1] = '\0';
 
 		line_number++;
-		/*
-		if (v_flag)
-		{
-			printf("%s: %s: line %d: %s",
-					prog, filename, line_number, original);
-		}
-		*/
+	
+	/* --- Expand macros on the line --- */
 
 		// assume original[] is constructed properly
 		// assume expanded[] is large enough
@@ -276,58 +258,94 @@ void read_lines(char *filename, FILE *fp)
 					prog, filename, line_number, expanded);
 		}
 
-		strcpy(buffer, expanded);			// copy, safe to modify
+		strcpy(buffer, expanded);	// copy, safe to modify
 
 		char *buf = buffer;
 
+	/* --- Clean up extraneous whitespace, check for strange errors --- */
 		clean_up_whitespace(buf);
-
-		if (buf[0] == '\0')				// nothing left?
+		
+		// If we have an empty line, ignore it
+		if (buf[0] == '\0')
 		{
 			continue;
 		}
 
-		char *p_colon = strchr(buf, ':');		// : indicates a target-prerequisite line
-		char *p_equal = strchr(buf, '=');		// = indicates a macro definition
+		// A ':' or '=' indicates a target-prerequisite or macro line
+		char *first_colon_or_equal = strpbrk(buf, ":=");
 
+		// Check for illegal ':' or '=' occuring after initial ':' or '='
+		char *extra_colon_or_equal;
+
+		if ((extra_colon_or_equal = strpbrk(first_colon_or_equal, "=:")) != NULL)
+		{
+			error_count++;
+
+			fprintf(stderr, "%s: %s:%d: error: unexpected '%c' found after initial '%c'\n",
+				prog, filename, line_number, *extra_colon_or_equal, *first_colon_or_equal);
+
+			continue;
+		}
+
+	/* --- Take appropriate action for each line type --- */
 		if (buf[0] == '\t')
 		{
-			if (v_flag)
-			{
-				printf("  diagnosis: recipe line\n");
-			}
-
 			if (have_target == false)
 			{
-				fprintf(stderr, "%s: %s:%d: error: found recipe without preceding target\n",
+				error_count++;
+				fprintf(stderr, "%s: %s:%d: error: recipe without target\n",
 						prog, filename, line_number);
-				exit(EXIT_FAILURE);
+				
+				continue;
 			}
 
+			// append the rest of the line following the initial '\t'
+			// to the local recipe list
 			string_list_append(current_recipes, buf+1);
-			printf("%s: appended recipe to list for target '%s':\n\t%s\n",
-					prog, current_target->name, buf+1);
 		}
-		else if (p_colon != NULL)
+		else if (*first_colon_or_equal == ':')
 		{
-			if (v_flag) 
+			// Attempt to make a new target
+			if ((current_target = parse_target(buf, first_colon_or_equal, 
+							filename, line_number)) != NULL)
 			{
-				printf("  diagnosis: target-prerequisite\n");
-			}
-			
-			current_target = parse_target(buf, p_colon, filename, line_number);
-			have_target = true;
-		}
-		else if (p_equal != NULL)
-		{
-			if (v_flag) 
-			{
-				printf("  diagnosis: macro definition\n");
-			}
+				have_target = true;
 
+				// If verbose, print current target list
+				if (v_flag)
+				{
+					printf("%s: parsed target '%s'\n",
+							prog, current_target->name);
+					target_list_print(parsed_targets);
+				}
+			}
+			else
+			{
+				error_count++;
+				have_target = false;
+
+				fprintf(stderr, "%s: %s:%d: error: failed to parse target\n",
+						prog, filename, line_number);
+			}
+		}
+		else if (*first_colon_or_equal == '=')
+		{
 			have_target = false;
 
-			parse_macro(buf, p_equal, filename, line_number);
+			if ((parse_macro(buf, first_colon_or_equal, filename, line_number)) == 1)
+			{
+				error_count++;
+				fprintf(stderr, "%s: %s:%d: error: failed to parse macro\n",
+						prog, filename, line_number);
+			}
+			else
+			{
+				// If verbose, print current macro list
+				if (v_flag)
+				{
+					macro_list_print();
+				}
+			}
 		}
 		else if (strncmp("include", buf, 7) == 0)
 		{
@@ -342,14 +360,26 @@ void read_lines(char *filename, FILE *fp)
 		}
 		else
 		{
-			if (v_flag) 
-			{
-				printf("  diagnosis: something else\n");
-			}
-
+			error_count++;
 			have_target = false;
-			fprintf(stderr, "%s: %s: line %d: not recognized: %s",
+			fprintf(stderr, "%s: %s:%d: error: not recognized: %s",
 					prog, filename, line_number, original);
+		}
+
+	/* --- Clean up targets and recipes before reading next line --- */
+		if (have_target && current_recipes == NULL)
+		{
+			current_recipes = string_list_allocate();
+		}
+		else if (!have_target && current_recipes != NULL)
+		{
+			if (current_recipes->head != NULL)
+			{
+				string_list_deallocate(current_target->recipes);
+				current_target->recipes = current_recipes;
+				current_target = NULL;
+				current_recipes = NULL;
+			}
 		}
 	}
 
@@ -359,7 +389,7 @@ void read_lines(char *filename, FILE *fp)
 				prog, filename, strerror(errno));
 	}
 
-	return;
+	return error_count;
 }
 
 //------------------------------------------------------------------------------
@@ -368,7 +398,7 @@ struct target *parse_target(char *buf, char *p_colon,
 		char *filename, int line_number)
 {
 	// format:
-	// 	target : prerequisites
+	// 	target : prereq_1 prereq_2 prereq_3 . . .
 	
 	/* Parse target name */
 	char *name_start = buf;
@@ -382,7 +412,7 @@ struct target *parse_target(char *buf, char *p_colon,
 	{
 		fprintf(stderr, "%s: %s:%d: error: empty target name\n",
 				prog, filename, line_number);
-		exit(EXIT_FAILURE);
+		return NULL;
 	}
 
 	char *name_end = p_colon-1;
@@ -398,14 +428,14 @@ struct target *parse_target(char *buf, char *p_colon,
 	 * append new target with name to global parsed targets list.
 	 * See hake.h for global list declaration. 
 	 */
-	struct target *tar;
-	if ((tar = get_target(parsed_targets, name_start)) == NULL)
+	struct target *target;
+	if ((target = get_target(parsed_targets, name_start)) == NULL)
 	{
-		tar = target_list_append(parsed_targets, name_start);
+		target = target_list_append(parsed_targets, name_start);
 	}
 	else
 	{
-		fprintf(stderr, "%s: %s:%d: warning: Target '%s' redeclared.",
+		fprintf(stderr, "%s: %s:%d: warning: target '%s' already declared\n",
 				prog, filename, line_number, name_start);
 	}
 
@@ -415,76 +445,72 @@ struct target *parse_target(char *buf, char *p_colon,
 	 */
 	char *prereqs_start = p_colon+1;
 	
-	parse_prereqs(prereqs_start, filename, line_number, tar);
+	parse_prereqs(prereqs_start, target, filename, line_number);
 
-	/* If verbose output is specified,
-	 * print the current list of targets.
-	 */
-	if (v_flag)
-	{
-		printf("%s: Parsed target %s\n",
-				prog, name_start);
-		target_list_print(parsed_targets);
-	}
-
-	return tar;
+	return target;
 }
 
 //------------------------------------------------------------------------------
 
-void parse_prereqs(char *prereqs, char *filename, int line_number, struct target *newtarget)
+struct string_list *parse_prereqs(char *prereqs, struct target *target,
+		char *filename, int line_number)
 {
-  char *delimiter;
+	char *delimiter;
 
-  // Check for illegal ':' or '=' occuring after
-  // initial ':' in target : prerequisite line
-  if ((delimiter = strpbrk(prereqs, "=:")) != NULL)
-  {
+	// Check for illegal ':' or '=' occuring after
+	// initial ':' in target : prerequisite line
+	if ((delimiter = strpbrk(prereqs, "=:")) != NULL)
+	{
 		fprintf(stderr, "%s: %s:%d: error: unexpected '%c' found after initial ':'\n",
 			prog, filename, line_number, *delimiter);
-		exit(EXIT_FAILURE);
-  }
-
-  // run through all of prereqs until endline
-  while (*prereqs != '\n' && *prereqs != '\0')
-  {
-  	char *p_start = prereqs;
-
-  	// skip whitespace and tabs at beginning of p_start
-  	while (*p_start == ' ' || *p_start == '\t')
-  	{
-  		p_start++;
-  	}
-
-	if (*p_start == '\n' || *p_start == '\0')
+	}
+	else
 	{
-		return;
+		// Run through all of prereqs until endline or end of buffer.
+		// If 
+		while (*prereqs != '\n' && *prereqs != '\0')
+		{
+			char *p_start = prereqs;
+
+			// skip whitespace and tabs at beginning of p_start
+			while (*p_start == ' ' || *p_start == '\t')
+			{
+				p_start++;
+			}
+
+			// end
+			if (*p_start == '\n' || *p_start == '\0')
+			{
+				return target->prereqs;
+			}
+
+			// set p_end to next whitespace or '\0' after p_start
+			char *p_end = p_start;
+
+			while (*p_end != ' ' && *p_end != '\t' && *p_end != '\n' && *p_end != '\0')
+			{
+				p_end++;
+			}
+
+			// p_end to '\0' to end p_start
+			*p_end = '\0';
+
+
+			// append to newtarget's prereqs list
+			string_list_append_if_new(target->prereqs, p_start);
+
+			// skip to character after parsed prereq
+			prereqs = p_end + 1;
+		}
 	}
 
-  	// set p_end to next whitespace/tab after p_start
-	char *p_end = p_start;
-
-  	while (*p_end != ' ' && *p_end != '\t' && *p_end != '\n' && *p_end != '\0')
-  	{
-  		p_end++;
-  	}
-
-  	// p_end to '\0' to end p_start
-  	*p_end = '\0';
-	
-
-  	// append to newtarget's prereqs list
-	printf("\t<<%s>>\n", p_start);
-  	string_list_append_if_new(newtarget->prereqs, p_start);
-
-	// increase prereqs to after already accounted for prereq
-  	prereqs = p_end + 1;
-  }
+	return target->prereqs;
 }
 
 //------------------------------------------------------------------------------
 
-void parse_macro(char *buf, char *p_equal, const char *filename, int line_number)
+int parse_macro(char *buf, char *p_equal, 
+		const char *filename, int line_number)
 {
 	// name = body
 	// *p_equal is '='
@@ -497,9 +523,9 @@ void parse_macro(char *buf, char *p_equal, const char *filename, int line_number
 	// check for empty macro name
 	if (name_start == p_equal)
 	{
-		fprintf(stderr, "%s: %s:%d: error: empty macro name\n",
+		fprintf(stderr, "%s: %s:%d: error: empty macro name:\n",
 				prog, filename, line_number);
-		exit(EXIT_FAILURE);
+		return 1;
 	}
 
 	char *name_end = p_equal-1;
@@ -530,21 +556,12 @@ void parse_macro(char *buf, char *p_equal, const char *filename, int line_number
 	body_end++;
 	*body_end = '\0';
 
-	/*
-	if (v_flag)
-	{
-		macro_list_print();
-	}
-	*/
-
 	macro_set(name_start, body_start);
 
-	if (v_flag)
-	{
-		macro_list_print();
-	}
+	printf("%s: defined macro '%s'\n",
+			prog, name_start);
 
-	return;
+	return 0;
 }
 
 void parse_include(char *buf, const char *filename, int line_number)
@@ -568,7 +585,7 @@ void parse_include(char *buf, const char *filename, int line_number)
 		// following GNU Make, this is not an error
 		if (v_flag) 
 		{
-			fprintf(stderr, "%s: %s:%d: error: include but no filename\n",
+			fprintf(stderr, "%s: %s:%d: error: include without filename\n",
 					prog, filename, line_number);
 		}
 		

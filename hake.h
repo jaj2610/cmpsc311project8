@@ -32,7 +32,7 @@ extern struct string_list *filenames;
 extern struct target_list *parsed_targets;
 
 extern int v_flag;	// verbosity specified
-extern int d_flag;
+extern int d_flag;	// debug output specified
 
 // return 1 if successful, 0 if not
 // "success" means the file could be opened for reading, or that we had seen
@@ -42,18 +42,38 @@ extern int d_flag;
 int read_file(char *filename, int quiet);
 
 // fp comes from the file (named filename) opened by read_file() using fopen()
-void read_lines(char *filename, FILE *fp);
+// Returns 
+int read_lines(char *filename, FILE *fp);
 
+/* Parses a "target : prerequisite" line into a struct target.
+ * Returns a pointer to the new target on success.
+ * 	-- Also adds the target to parsed_targets global target_list
+ * 		(see above)
+ * Returns NULL on failure.
+ */
 struct target *parse_target(char *buf, char *p_colon,
 		char *filename, int line_number);
 
-void parse_prereqs(char *prereqs, char *filename,
-		int line_number, struct target *newtarget);
+/* Parses the prerequisites from the a "target : prerequisite" line
+ * into a list of prereqs.
+ * Returns a pointer to the string_list of parsed prereqs.
+ */
+struct string_list *parse_prereqs(char *prereqs, struct target *target,
+		char *filename, int line_number);
 
-void parse_macro(char *buf, char *p_equal, const char *filename, int line_number);
+/* Parses a macro line and adds the new macro to the macrolist in macro.h
+ * Returns 0 on success 
+ * Returns 1 on failure.*/
+int parse_macro(char *buf, char *p_equal,
+		const char *filename, int line_number);
 
+/* Parses an include line and calls read_file() on the included file. */
 void parse_include(char *buf, const char *filename, int line_number);
 
+/* Removes leading/trailing whitespace on lines in the hakefile.
+ * Also overwrites comments ('#') with '\0', effectively
+ * removing them from the view of the interpreter.
+ */
 void clean_up_whitespace(char *buf);
 
 #endif /* HAKE_H */

@@ -42,7 +42,7 @@ static struct macro macro_list = {
 
 void macro_list_print(void)
 {
-  printf("Macro list\n");
+  printf("current macro list:\n");
 
   for (struct macro *p = macro_list.next; p != NULL; p = p->next)
     {

@@ -175,6 +175,7 @@ void target_list_deallocate(struct target_list * const list)
       Free(p->name, __func__, __LINE__);
       string_list_deallocate(p->prereqs);
       string_list_deallocate(p->recipes);
+      p->file_access_time = NULL;
       prev = p;
   }
   Free(prev, __func__, __LINE__);   // now, p == list->tail
@@ -221,6 +222,8 @@ struct target *target_list_append(struct target_list * const list, const char *n
   p->name = Strdup(name,  __func__, __LINE__);
   p->prereqs = string_list_allocate();
   p->recipes = string_list_allocate();
+  p->needs_to_be_haked = 0;
+  p->file_access_time = NULL;
 
   if (list->head == NULL) // empty list, list->tail is also NULL
   {
@@ -254,6 +257,7 @@ void target_list_pop(struct target_list * const list, const char *name)
         prev->next = p->next;
       }
 
+      p->file_access_time = NULL;
       Free(p->name, __func__, __LINE__);
       string_list_deallocate(p->prereqs);
       string_list_deallocate(p->recipes);

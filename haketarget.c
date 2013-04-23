@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdbool.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
@@ -34,8 +34,8 @@ void hake_target(char *targetname)
   // verify target (check recursively_protected_targets, determine if prereqs are targets/filenames)
   verify_target(target_to_verify);
 
-  // recipe_lists_to_print should now be filled
-  string_list_print(recipe_lists_to_print);
+  // recipes_to_print should now be filled
+  string_list_print(recipes_to_print);
 
   return;
 }
@@ -65,7 +65,7 @@ void verify_target(char *targetname)
   {
     for (struct string_node *p = target_to_verify->recipes->head; p != NULL; p = p->next)
     {
-      string_list_append(target_to_verify->recipes, recipe_lists_to_print);
+      string_list_append(target_to_verify->recipes, recipes_to_print);
     }
   }
 
@@ -77,6 +77,7 @@ void verify_target(char *targetname)
 void verify_prerequisites(struct target *target_to_verify)
 {
   struct string_node *current_prereq = target->recipes->head;
+  struct stat file_info;
 
   while (current_prereq != NULL)
   {
@@ -87,8 +88,17 @@ void verify_prerequisites(struct target *target_to_verify)
     else
     {
       // assume filename and deal with current_prereq as such
-      ;
-      // if file does not exist, quit and complain
+      if (stat(current_prereq->body, &file_info) == -1)
+      {
+        fprintf(stderr, "error: file %s is not found\n", current_prereq->body);
+        exit(1);
+      }
+
+      // compare file modify times
+      if (file_info.st_mtime > target_to_verify->file_access_time)
+      {
+        target_to_verify->needs_to_be_haked = 1;
+      }
     }
 
     current_prereq = current_prereq->next;

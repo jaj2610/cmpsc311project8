@@ -25,6 +25,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <time.h>
 
 //#include "cmpsc311.h"
 //#include "names.h"
@@ -40,6 +43,10 @@ char *prog;
 
 struct string_list *filenames;
 struct target_list *parsed_targets;
+
+struct string_list *recipes_to_print;
+struct target_list *recursively_protected_targets;
+
 
 
 int v_flag = 0;
@@ -73,9 +80,11 @@ int main(int argc, char *argv[])
 	// for use with getopt(3)
 	int ch;
 
+	// allocate memory for global lists
 	filenames = string_list_allocate();
 	parsed_targets = target_list_allocate();
-
+	recipes_to_print = string_list_allocate();
+	recursively_protected_targets = target_list_allocate();
 
 	extern char *optarg;
 	extern int optind;
@@ -165,19 +174,13 @@ int read_file(char *filename, int quiet)
 		fprintf(stderr, "%s: read_file(%s)\n", prog, filename);
 	}
 
-	// file names come from -f and include
-	// by construction, filenames is now not NULL
-
-	if (v_flag)
-	{
-		string_list_print(filenames); 
-	}
-
 	// if (filename is on the list already) { return 1 }
 	// else { put filename on the list and continue }
 	if (string_list_append_if_new(filenames, filename) == 1)
 	{
-		return 2;
+		fprintf(stderr, "%s: error: file '%s' already included or parsed\n",
+				prog, filename);
+		return 1;
 	}
 
 	if (v_flag)
@@ -185,9 +188,18 @@ int read_file(char *filename, int quiet)
 		string_list_print(filenames);
 	}
 
+	struct stat info;
+
 	if (strcmp(filename, "-") == 0)
 	{
-		read_lines("[stdin]", stdin);
+		time_t t;
+		read_lines("[stdin]", stdin, t);
+		return 1;
+	}
+	else if( stat(filename, &info) == -1)
+	{
+		fprintf(stderr, "%s: could not stat() input file %s: %s\n",
+				prog, filename, strerror(errno));
 		return 1;
 	}
 
@@ -206,7 +218,7 @@ int read_file(char *filename, int quiet)
 		return 0;
 	}
 
-	int read_lines_status = read_lines(filename, fp);
+	int read_lines_status = read_lines(filename, fp, info.st_atime);
 
 	if (Fclose(fp, __func__, __LINE__) != 0)
 	{
@@ -219,11 +231,12 @@ int read_file(char *filename, int quiet)
 
 //------------------------------------------------------------------------------
 
-int read_lines(char *filename, FILE *fp)
+int read_lines(char *filename, FILE *fp, time_t file_access_time)
 {
 	if (d_flag)
 	{
 		fprintf(stderr, "%s: read_lines(%s)\n", prog, filename);
+		printf("\tfile last accessed: %s\n", ctime(&file_access_time));
 	}
 
 	char original[MAXLINE+2];	// from fgets()
@@ -326,7 +339,7 @@ int read_lines(char *filename, FILE *fp)
 		{
 			// Attempt to make a new target
 			if ((current_target = parse_target(buf, first_colon_or_equal, 
-							filename, line_number)) != NULL)
+							filename, file_access_time, line_number)) != NULL)
 			{
 				have_target = true;
 
@@ -398,7 +411,7 @@ int read_lines(char *filename, FILE *fp)
 //------------------------------------------------------------------------------
 
 struct target *parse_target(char *buf, char *p_colon,
-		char *filename, int line_number)
+		char *filename, time_t file_access_time, int line_number)
 {
 	// format:
 	// 	target : prereq_1 prereq_2 prereq_3 . . .
@@ -441,6 +454,8 @@ struct target *parse_target(char *buf, char *p_colon,
 		fprintf(stderr, "%s: %s:%d: warning: target '%s' already declared\n",
 				prog, filename, line_number, name_start);
 	}
+
+	target->file_access_time = file_access_time;
 
 	/* Parse the prerequisites separately,
 	 * and add them to the new_target struct

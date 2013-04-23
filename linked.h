@@ -13,6 +13,7 @@
 //------------------------------------------------------------------------------
 
 #include <time.h>
+#include <sys/types.h>
 
 //------------------------------------------------------------------------------
 
@@ -64,7 +65,7 @@ struct target
 	char *name;
 	struct string_list *prereqs;
 	struct string_list *recipes;
-	struct time_t file_access_time;
+	time_t file_access_time;
 	int needs_to_be_haked;	// default 0; indicates whether or not target's recipes need to be printed
 };
 

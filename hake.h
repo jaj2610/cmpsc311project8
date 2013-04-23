@@ -14,6 +14,8 @@
 #define HAKE_H
 
 #include <stdio.h>
+#include <sys/types.h>
+#include <time.h>
 #include "linked.h"
 
 // maximum line length in an input file (buffer size in read_lines)
@@ -27,9 +29,12 @@ extern char *prog;
  */
 extern struct string_list *filenames;
 
-/* A global list of targets parsed by hake.
- */
+/* A global list of targets parsed by hake. */
 extern struct target_list *parsed_targets;
+
+extern struct string_list *recipes_to_print;
+
+extern struct target_list *recursively_protected_targets;
 
 extern int v_flag;	// verbosity specified
 extern int d_flag;	// debug output specified
@@ -43,7 +48,7 @@ int read_file(char *filename, int quiet);
 
 // fp comes from the file (named filename) opened by read_file() using fopen()
 // Returns 
-int read_lines(char *filename, FILE *fp);
+int read_lines(char *filename, FILE *fp, time_t access_time);
 
 /* Parses a "target : prerequisite" line into a struct target.
  * Returns a pointer to the new target on success.
@@ -52,7 +57,7 @@ int read_lines(char *filename, FILE *fp);
  * Returns NULL on failure.
  */
 struct target *parse_target(char *buf, char *p_colon,
-		char *filename, int line_number);
+		char *filename, time_t file_access_time, int line_number);
 
 /* Parses the prerequisites from the a "target : prerequisite" line
  * into a list of prereqs.

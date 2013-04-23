@@ -20,7 +20,7 @@
 
 void hake_target(char *targetname);
 
-void verify_target(char *targetname);
+void verify_target(struct target *target_to_verify);
 
 void verify_prerequisites(struct target *target_to_verify);
 

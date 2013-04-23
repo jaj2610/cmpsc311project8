@@ -42,9 +42,8 @@ void hake_target(char *targetname)
 
 //------------------------------------------------------------------------------
 
-void verify_target(char *targetname)
+void verify_target(struct target *target_to_verify)
 {
-  struct target *target_to_verify;
 	// we need to ensure that target_to_verify cannot
   // specify itself as a prerequisite and that no subtarget can specify it as a prerequisite
   if ((target_to_verify = get_target(recursively_protected_targets, targetname)) == NULL)
@@ -63,7 +62,7 @@ void verify_target(char *targetname)
   // if the target_to_verify needs to be haked, add its recipes to the list of recipes to print
   if (target_to_verify.needs_to_be_haked)
   {
-    for (struct string_node *p = target_to_verify->recipes->head; p != NULL; p = p->next)
+    for (struct string_list *p = target_to_verify->recipes->head; p != NULL; p = p->next)
     {
       string_list_append(target_to_verify->recipes, recipes_to_print);
     }
@@ -76,14 +75,15 @@ void verify_target(char *targetname)
 
 void verify_prerequisites(struct target *target_to_verify)
 {
-  struct string_node *current_prereq = target->recipes->head;
+  struct string_node *current_prereq = target_to_verify->recipes->head;
   struct stat file_info;
+  struct target *local_target;
 
   while (current_prereq != NULL)
   {
-    if ((target_to_verify = get_target(parse_targets, current_prereq->body)) != NULL)
+    if ((local_target = get_target(parse_targets, current_prereq->body)) != NULL)
     {
-      verify_target(target_to_verify->name);
+      verify_target(local_target->name);
     }
     else
     {

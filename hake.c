@@ -299,7 +299,7 @@ void read_lines(char *filename, FILE *fp)
 			
 			have_target = true;
 			
-			parse_target(buf, line_number);
+			parse_target(buf, p_colon, filename, line_number);
 		}
 		else if (p_equal != NULL)
 		{
@@ -347,7 +347,7 @@ void read_lines(char *filename, FILE *fp)
 
 //------------------------------------------------------------------------------
 
-void parse_target(char *buf, char *p_colon, int line_number)
+void parse_target(char *buf, char *p_colon, char *filename, int line_number)
 {
 	// format:
 	// 	target : prerequisites
@@ -367,7 +367,7 @@ void parse_target(char *buf, char *p_colon, int line_number)
 		exit(EXIT_FAILURE);
 	}
 
-	char *name_end = p_equal-1;
+	char *name_end = p_colon-1;
 	while (*name_end == ' ' || *name_end == '\t')
 	{
 		name_end--;
@@ -392,7 +392,7 @@ void parse_target(char *buf, char *p_colon, int line_number)
 	 */
 	char *prereqs_start = p_colon+1;
 	
-	parse_prereqs(prereqs_start, tar);
+	parse_prereqs(prereqs_start, filename, line_number, tar);
 
 	/* If verbose output is specified,
 	 * print the current list of targets.
@@ -409,19 +409,17 @@ void parse_target(char *buf, char *p_colon, int line_number)
 
 //------------------------------------------------------------------------------
 
-void parse_prereqs(char *prereqs, struct target *newtarget)
+void parse_prereqs(char *prereqs, char *filename, int line_number, struct target *newtarget)
 {
-  char *p_equal, p_colon;
+  char *delimiter;
 
-  if ((p_equal = strchr(prereqs, '=')) != NULL)
+  // Check for illegal ':' or '=' occuring after
+  // initial ':' in target : prerequisite line
+  if ((delimiter = strpbrk(prereqs, "=:")) != NULL)
   {
-  	// error
-  	return;
-  }
-  else if((p_colon = strchr(prereqs, ':')) != NULL)
-  {
-  	// error
-  	return;
+		fprintf(stderr, "%s: %s:%d: error: unexpected '%c' found after initial ':'\n",
+			prog, filename, line_number, *delimiter);
+		exit(EXIT_FAILURE);
   }
 
   // run through all of prereqs until endline
@@ -450,7 +448,7 @@ void parse_prereqs(char *prereqs, struct target *newtarget)
   	prereqs += strlen(p_start);
 
   	// append to newtarget's prereqs list
-  	string_list_append_if_new(newtarget->prereqs, name_start);
+  	string_list_append_if_new(newtarget->prereqs, p_start);
   }
 }
 

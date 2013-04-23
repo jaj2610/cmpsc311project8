@@ -14,6 +14,7 @@
 #define HAKE_H
 
 #include <stdio.h>
+#include "linked.h"
 
 // maximum line length in an input file (buffer size in read_lines)
 #define MAXLINE 4096
@@ -43,9 +44,10 @@ int read_file(char *filename, int quiet);
 // fp comes from the file (named filename) opened by read_file() using fopen()
 void read_lines(char *filename, FILE *fp);
 
-void parse_target(char *buf, char *p_colon, int line_number);
+void parse_target(char *buf, char *p_colon, char *filename, int line_number);
 
-void parse_prereqs(char *prereqs, struct target *newtarget);
+void parse_prereqs(char *prereqs, char *filename,
+		int line_number, struct target *newtarget);
 
 void parse_macro(char *buf, char *p_equal, const char *filename, int line_number);
 

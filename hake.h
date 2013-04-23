@@ -44,7 +44,8 @@ int read_file(char *filename, int quiet);
 // fp comes from the file (named filename) opened by read_file() using fopen()
 void read_lines(char *filename, FILE *fp);
 
-void parse_target(char *buf, char *p_colon, char *filename, int line_number);
+struct target *parse_target(char *buf, char *p_colon,
+		char *filename, int line_number);
 
 void parse_prereqs(char *prereqs, char *filename,
 		int line_number, struct target *newtarget);

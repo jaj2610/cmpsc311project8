@@ -231,22 +231,41 @@ void read_lines(char *filename, FILE *fp)
 	char buffer[MAXLINE+2];	// working copy, safe to modify
 
 	int line_number = 0;
-	int recipe_line_number = 0;
 
 	bool have_target = false;			// recipes must follow targets
+	struct target *current_target;
+	struct string_list *current_recipes;
 
 	while (fgets(original, MAXLINE, fp) != NULL)
 	{
+		/* Clean up targets and recipes */
+		if (have_target && current_recipes == NULL)
+		{
+			current_recipes = string_list_allocate();
+		}
+		else if (!have_target && current_recipes != NULL)
+		{
+			if (current_recipes->head != NULL)
+			{
+				string_list_deallocate(current_target->recipes);
+				current_target->recipes = current_recipes;
+				current_target = NULL;
+				current_recipes = NULL;
+			}
+		}
+
 		// it is possible that the input line was too long, so terminate the string cleanly
 		original[MAXLINE] = '\n';
 		original[MAXLINE+1] = '\0';
 
 		line_number++;
+		/*
 		if (v_flag)
 		{
 			printf("%s: %s: line %d: %s",
 					prog, filename, line_number, original);
 		}
+		*/
 
 		// assume original[] is constructed properly
 		// assume expanded[] is large enough
@@ -271,35 +290,32 @@ void read_lines(char *filename, FILE *fp)
 		char *p_colon = strchr(buf, ':');		// : indicates a target-prerequisite line
 		char *p_equal = strchr(buf, '=');		// = indicates a macro definition
 
-		if (buffer[0] == '\t')
+		if (buf[0] == '\t')
 		{
-			recipe_line_number++;
 			if (v_flag)
 			{
-				printf("  diagnosis: recipe line %d\n", 
-						recipe_line_number);
+				printf("  diagnosis: recipe line\n");
 			}
 
 			if (have_target == false)
 			{
-				fprintf(stderr, "%s: %s: line %d: recipe but no target\n",
+				fprintf(stderr, "%s: %s:%d: error: found recipe without preceding target\n",
 						prog, filename, line_number);
-				continue;
 			}
-			
-			// (save this for a later project)
+
+			string_list_append(current_recipes, buf+1);
+			printf("%s: appended recipe to list for target '%s':\n\t%s",
+					prog, current_target->name, buf+1);
 		}
 		else if (p_colon != NULL)
 		{
-			recipe_line_number = 0;
 			if (v_flag) 
 			{
 				printf("  diagnosis: target-prerequisite\n");
 			}
 			
+			current_target = parse_target(buf, p_colon, filename, line_number);
 			have_target = true;
-			
-			parse_target(buf, p_colon, filename, line_number);
 		}
 		else if (p_equal != NULL)
 		{
@@ -347,7 +363,8 @@ void read_lines(char *filename, FILE *fp)
 
 //------------------------------------------------------------------------------
 
-void parse_target(char *buf, char *p_colon, char *filename, int line_number)
+struct target *parse_target(char *buf, char *p_colon,
+		char *filename, int line_number)
 {
 	// format:
 	// 	target : prerequisites
@@ -385,6 +402,11 @@ void parse_target(char *buf, char *p_colon, char *filename, int line_number)
 	{
 		tar = target_list_append(parsed_targets, name_start);
 	}
+	else
+	{
+		fprintf(stderr, "%s: %s:%d: warning: Target '%s' redeclared. Merging prerequisites and overwriting existing recipe list if new recipe list exists.\n",
+				prog, filename, line_number, name_start);
+	}
 
 	/* Parse the prerequisites separately,
 	 * and add them to the new_target struct
@@ -404,7 +426,7 @@ void parse_target(char *buf, char *p_colon, char *filename, int line_number)
 		target_list_print(parsed_targets);
 	}
 
-	return;
+	return tar;
 }
 
 //------------------------------------------------------------------------------
@@ -423,7 +445,7 @@ void parse_prereqs(char *prereqs, char *filename, int line_number, struct target
   }
 
   // run through all of prereqs until endline
-  while (*prereqs != '\n')
+  while (*prereqs != '\n' && *prereqs != '\0')
   {
   	char *p_start = prereqs;
 
@@ -433,22 +455,29 @@ void parse_prereqs(char *prereqs, char *filename, int line_number, struct target
   		p_start++;
   	}
 
-  	char *p_end = p_start;
+	if (*p_start == '\n' || *p_start == '\0')
+	{
+		return;
+	}
 
   	// set p_end to next whitespace/tab after p_start
-  	while (*p_end != ' ' && *p_end != '\t')
+	char *p_end = p_start;
+
+  	while (*p_end != ' ' && *p_end != '\t' && *p_end != '\n' && *p_end != '\0')
   	{
   		p_end++;
   	}
 
   	// p_end to '\0' to end p_start
   	*p_end = '\0';
-
-  	// increase prereqs to after already accounted for prereq
-  	prereqs += strlen(p_start);
+	
 
   	// append to newtarget's prereqs list
+	printf("\t<<%s>>\n", p_start);
   	string_list_append_if_new(newtarget->prereqs, p_start);
+
+	// increase prereqs to after already accounted for prereq
+  	prereqs = p_end + 1;
   }
 }
 

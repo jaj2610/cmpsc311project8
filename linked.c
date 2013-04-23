@@ -186,6 +186,8 @@ void target_list_deallocate(struct target_list * const list)
 
 void target_list_print(const struct target_list * const list)
 {
+	puts("Parsed targets");
+
   if (list->head == NULL)
     { 
       ; 

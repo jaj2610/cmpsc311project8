@@ -1,6 +1,6 @@
 To-Do List:
 
--macro expansion
+DONE-macro expansion
 -parse target_prereq lines: create targets
 -multiple filenames?
 -parse recipes

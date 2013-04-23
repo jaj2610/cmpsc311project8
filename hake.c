@@ -233,8 +233,8 @@ void read_lines(char *filename, FILE *fp)
 	int line_number = 0;
 
 	bool have_target = false;			// recipes must follow targets
-	struct target *current_target;
-	struct string_list *current_recipes;
+	struct target *current_target = NULL;
+	struct string_list *current_recipes = NULL;
 
 	while (fgets(original, MAXLINE, fp) != NULL)
 	{
@@ -301,10 +301,11 @@ void read_lines(char *filename, FILE *fp)
 			{
 				fprintf(stderr, "%s: %s:%d: error: found recipe without preceding target\n",
 						prog, filename, line_number);
+				exit(EXIT_FAILURE);
 			}
 
 			string_list_append(current_recipes, buf+1);
-			printf("%s: appended recipe to list for target '%s':\n\t%s",
+			printf("%s: appended recipe to list for target '%s':\n\t%s\n",
 					prog, current_target->name, buf+1);
 		}
 		else if (p_colon != NULL)
@@ -404,7 +405,7 @@ struct target *parse_target(char *buf, char *p_colon,
 	}
 	else
 	{
-		fprintf(stderr, "%s: %s:%d: warning: Target '%s' redeclared. Merging prerequisites and overwriting existing recipe list if new recipe list exists.\n",
+		fprintf(stderr, "%s: %s:%d: warning: Target '%s' redeclared.",
 				prog, filename, line_number, name_start);
 	}
 
@@ -529,10 +530,12 @@ void parse_macro(char *buf, char *p_equal, const char *filename, int line_number
 	body_end++;
 	*body_end = '\0';
 
+	/*
 	if (v_flag)
 	{
 		macro_list_print();
 	}
+	*/
 
 	macro_set(name_start, body_start);
 

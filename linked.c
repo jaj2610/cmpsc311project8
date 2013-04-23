@@ -198,16 +198,17 @@ void target_list_print(const struct target_list * const list)
       {
         if (p->next != NULL)
         {
-          printf("%s, ",
+          printf("  %s\n",
             p->name);
         }
         else
         {
-          printf("%s",
+          printf("  %s\n",
             p->name);
         }
       }
     }
+  puts("  -- end of list");
 }
 
 //------------------------------------------------------------------------------

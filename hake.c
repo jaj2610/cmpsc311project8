@@ -240,6 +240,24 @@ int read_lines(char *filename, FILE *fp)
 
 	while (fgets(original, MAXLINE, fp) != NULL)
 	{
+	/* --- Clean up targets and recipes before reading next line --- */
+		if (have_target && current_recipes == NULL)
+		{
+			current_recipes = string_list_allocate();
+		}
+		
+		if (!have_target && current_recipes != NULL)
+		{
+			if (current_recipes->head != NULL)
+			{
+				string_list_deallocate(current_target->recipes);
+				current_target->recipes = current_recipes;
+			}
+			
+			current_target = NULL;
+			current_recipes = NULL;
+		}
+
 		// it is possible that the input line was too long,
 		// so terminate the string cleanly
 		original[MAXLINE] = '\n';
@@ -252,7 +270,7 @@ int read_lines(char *filename, FILE *fp)
 		// assume original[] is constructed properly
 		// assume expanded[] is large enough
 		macro_expand(original, expanded);
-		if (v_flag)
+		if (d_flag)
 		{
 			printf("%s: %s: line %d: %s", 
 					prog, filename, line_number, expanded);
@@ -277,7 +295,8 @@ int read_lines(char *filename, FILE *fp)
 		// Check for illegal ':' or '=' occuring after initial ':' or '='
 		char *extra_colon_or_equal;
 
-		if ((extra_colon_or_equal = strpbrk(first_colon_or_equal, "=:")) != NULL)
+		if (first_colon_or_equal != NULL 
+				&& (extra_colon_or_equal = strpbrk(first_colon_or_equal+1, "=:")) != NULL)
 		{
 			error_count++;
 
@@ -298,7 +317,7 @@ int read_lines(char *filename, FILE *fp)
 				
 				continue;
 			}
-
+			
 			// append the rest of the line following the initial '\t'
 			// to the local recipe list
 			string_list_append(current_recipes, buf+1);
@@ -364,22 +383,6 @@ int read_lines(char *filename, FILE *fp)
 			have_target = false;
 			fprintf(stderr, "%s: %s:%d: error: not recognized: %s",
 					prog, filename, line_number, original);
-		}
-
-	/* --- Clean up targets and recipes before reading next line --- */
-		if (have_target && current_recipes == NULL)
-		{
-			current_recipes = string_list_allocate();
-		}
-		else if (!have_target && current_recipes != NULL)
-		{
-			if (current_recipes->head != NULL)
-			{
-				string_list_deallocate(current_target->recipes);
-				current_target->recipes = current_recipes;
-				current_target = NULL;
-				current_recipes = NULL;
-			}
 		}
 	}
 
@@ -558,8 +561,11 @@ int parse_macro(char *buf, char *p_equal,
 
 	macro_set(name_start, body_start);
 
-	printf("%s: defined macro '%s'\n",
-			prog, name_start);
+	if (v_flag)
+	{
+		printf("%s: defined macro '%s'\n",
+				prog, name_start);
+	}
 
 	return 0;
 }

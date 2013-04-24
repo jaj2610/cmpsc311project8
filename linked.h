@@ -40,7 +40,7 @@ struct string_list *string_list_allocate(void);
 void string_list_deallocate(struct string_list * const list);
 
 /* string_list_print() prints entire string_list */
-void string_list_print(const struct string_list * const list);
+void string_list_print(const struct string_list * const list, int quiet_tail);
 
 /* string_list_append() adds a node to a string_list */
 void string_list_append(struct string_list * const list, const char *body);

@@ -132,13 +132,14 @@ int main(int argc, char *argv[])
 
 	// Scan the argv array again and process the -f arguments
 	optind = 1;
+	int error_count = 0;
 	while ((ch = getopt(argc, argv, ":hvdf:")) != -1)
 	{
 		switch (ch) 
 		{
 			case 'f':
 				f_flag++;		// number of -f options supplied
-				(void) read_file(optarg, 0);
+				error_count += read_file(optarg, 0);
 				break;
 			default:
 				break;
@@ -151,10 +152,16 @@ int main(int argc, char *argv[])
 		usage(EXIT_FAILURE);
 	}
 
+	if (error_count != 0)
+	{
+		fprintf(stderr, "%s: error count is %d, cannot hake target(s)\n",
+				prog, error_count);
+		exit(EXIT_FAILURE);
+	}
+	
 	// Print the recipes for the targets that are out of date
 	for (int i = optind; i < argc; i++)
  	{
-		printf("  target selected: %s\n", argv[i]);
 		hake_target(argv[i]);
 	}
 
@@ -163,7 +170,7 @@ int main(int argc, char *argv[])
 
 //------------------------------------------------------------------------------
 
-// return 1 if successful, 0 if not
+// return 0 if successful, >0 if not
 // "success" means the file could be opened for reading, or that we had seen
 //    the file before and don't need to read it again
 // quiet == 0 enables error messages if the file can't be opened
@@ -186,7 +193,8 @@ int read_file(char *filename, int quiet)
 
 	if (v_flag)
 	{
-		string_list_print(filenames);
+		puts("Filenames:");
+		string_list_print(filenames, 0);
 	}
 
 	struct stat info;
@@ -194,14 +202,13 @@ int read_file(char *filename, int quiet)
 	if (strcmp(filename, "-") == 0)
 	{
 		time_t t;
-		read_lines("[stdin]", stdin, t);
-		return 1;
+		return read_lines("[stdin]", stdin, t);
 	}
-	else if( stat(filename, &info) == -1)
+	else if (stat(filename, &info) == -1)
 	{
 		fprintf(stderr, "%s: could not stat() input file %s: %s\n",
 				prog, filename, strerror(errno));
-		return 1;
+		exit(EXIT_FAILURE);
 	}
 
 	FILE *fp;
@@ -216,10 +223,10 @@ int read_file(char *filename, int quiet)
 			exit(EXIT_FAILURE);
 		}
 	
-		return 0;
+		return 1;
 	}
 
-	int read_lines_status = read_lines(filename, fp, info.st_atime);
+	int error_count = read_lines(filename, fp, info.st_atime);
 
 	if (Fclose(fp, __func__, __LINE__) != 0)
 	{
@@ -227,7 +234,7 @@ int read_file(char *filename, int quiet)
 				prog, filename, strerror(errno));
 	}
 
-	return read_lines_status;
+	return error_count;
 }
 
 //------------------------------------------------------------------------------
@@ -272,7 +279,7 @@ int read_lines(char *filename, FILE *fp, time_t file_access_time)
 			{
 				printf("%s: processed recipes for target '%s'\nRecipe list:\n",
 						prog, current_target->name);
-				string_list_print(current_target->recipes);
+				string_list_print(current_target->recipes, 0);
 			}
 			
 			current_target = NULL;
@@ -360,7 +367,7 @@ int read_lines(char *filename, FILE *fp, time_t file_access_time)
 				{
 					printf("%s: processed recipes for target '%s'\nRecipe list:\n",
 							prog, current_target->name);
-					string_list_print(current_target->recipes);
+					string_list_print(current_target->recipes, 0);
 				}
 				
 				current_target = NULL;
@@ -431,7 +438,28 @@ int read_lines(char *filename, FILE *fp, time_t file_access_time)
 		}
 	}
 
-	if (ferror(fp))	// error when reading the file
+	/* Clean up recipes from while-loop */
+	if (have_target)
+	{
+		if (current_recipes->head != NULL)
+		{
+			string_list_deallocate(current_target->recipes);
+			current_target->recipes = current_recipes;
+		}
+
+		if (v_flag)
+		{
+			printf("%s: processed recipes for target '%s'\nRecipe list:\n",
+					prog, current_target->name);
+			string_list_print(current_target->recipes, 0);
+		}
+		
+		current_target = NULL;
+		current_recipes = NULL;
+	}
+
+	// error when reading the file
+	if (ferror(fp))
 	{
 		fprintf(stderr, "%s: %s: read error: %s\n",
 				prog, filename, strerror(errno));

@@ -37,7 +37,14 @@ void hake_target(char *targetname)
   verify_target(target_to_verify);
 
   // recipes_to_print should now be filled
-  string_list_print(recipes_to_print);
+  if (recipes_to_print->head != NULL)
+  {
+	  string_list_print(recipes_to_print, 1);
+  }
+  else
+  {
+	  printf("'%s' is up to date.", target_to_verify->name);
+  }
 
   return;
 }
@@ -53,12 +60,10 @@ void verify_target(struct target *parent_target)
     fprintf(stderr, "%s: error: recursive call to target '%s'\n",
 			 prog, parent_target->name);
 
-	 if (d_flag)
-	 {
-		 puts("Current target-chain:");
+		puts("Current target-chain:");
 		target_list_print(recursively_protected_targets, parent_target->name,
-				" <--- target's target-chain specifies it as a prerequisite\n");
-	 }
+				" <--- target's target-chain specifies it as a prerequisite");
+
     exit(EXIT_FAILURE);
   }
 
@@ -67,7 +72,7 @@ void verify_target(struct target *parent_target)
   // Look at each of the parent_target's prereqs to determine
   // if the target is up to date
   //verify_prerequisites(target_to_verify)
-  struct string_node *current_prereq = parent_target->recipes->head;
+  struct string_node *current_prereq = parent_target->prereqs->head;
   struct target *child_target;
   struct stat file_info;
 

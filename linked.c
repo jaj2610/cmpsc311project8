@@ -49,7 +49,7 @@ void string_list_deallocate(struct string_list * const list)
 
 //------------------------------------------------------------------------------
 
-void string_list_print(const struct string_list * const list)
+void string_list_print(const struct string_list * const list, int quiet_tail)
 {
 	if (list->head != NULL)
 	{
@@ -60,9 +60,11 @@ void string_list_print(const struct string_list * const list)
 		}
 	}
 
-	printf("  -- end of list\n");
+	if (!quiet_tail)
+	{
+		printf("  -- end of list\n");
+	}
 }
-
 
 //------------------------------------------------------------------------------
 

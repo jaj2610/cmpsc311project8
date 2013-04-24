@@ -55,7 +55,7 @@ void string_list_print(const struct string_list * const list, int quiet_tail)
 	{
 		for (struct string_node *p = list->head; p != NULL; p = p->next)
 		{
-    		printf("  %s\n",
+    		printf("%s\n",
 				p->body);
 		}
 	}

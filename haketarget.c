@@ -43,7 +43,7 @@ void hake_target(char *targetname)
   }
   else
   {
-	  printf("'%s' is up to date.", target_to_verify->name);
+	  printf("'%s' is up to date.\n", target_to_verify->name);
   }
 
   return;
@@ -127,7 +127,6 @@ void verify_target(struct target *parent_target)
   // pop parent_target from recursively_protected_targets
   target_list_pop(recursively_protected_targets, parent_target->name);
 
-
   // if target_to_verify is out of date, add its recipes to the list of recipes to print
   if (!parent_target->up_to_date)
   {
@@ -135,50 +134,9 @@ void verify_target(struct target *parent_target)
     {
       string_list_append(recipes_to_print, p->body);
     }
-
-	 parent_target->up_to_date = 1;
   }
 
   return;
 }
 
-//------------------------------------------------------------------------------
-
-
-#if 0
-void verify_prerequisites(struct target *target_to_verify)
-{
-  struct string_node *current_prereq = target_to_verify->recipes->head;
-  struct stat file_info;
-  struct target *local_target;
-
-  while (current_prereq != NULL)
-  {
-    if ((local_target = get_target(parse_targets, current_prereq->body)) != NULL)
-    {
-      verify_target(local_target->name);
-    }
-    else
-    {
-      // assume filename and deal with current_prereq as such
-      if (stat(current_prereq->body, &file_info) == -1)
-      {
-        fprintf(stderr, "error: file %s is not found\n", current_prereq->body);
-        exit(1);
-      }
-
-      // compare file modify times
-      if (file_info.st_mtime > target_to_verify->file_access_time)
-      {
-        target_to_verify->needs_to_be_haked = 1;
-      }
-    }
-
-    current_prereq = current_prereq->next;
-  }
-
-  // pop target_to_verify from recursively_protected_targets
-  target_list_pop(recursively_protected_targets, target_to_verify->name);
-}
-#endif
 //------------------------------------------------------------------------------

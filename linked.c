@@ -94,7 +94,7 @@ void string_list_pop(struct string_list * const list, const char *body)
 
   for (struct string_node *p = list->head; p != NULL; p = p->next)
   {
-    if (p->body == body)
+    if (strcmp(p->body,body) == 0)
      {
         if (prev == NULL)
         {
@@ -235,7 +235,7 @@ void target_list_pop(struct target_list * const list, const char *name)
 
   for (struct target *p = list->head; p != NULL; p = p->next)
   {
-    if (p->name == name)
+    if (strcmp(p->name, name) == 0)
     {
       if (prev == NULL)
       {

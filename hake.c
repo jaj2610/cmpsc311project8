@@ -1,15 +1,13 @@
-/* CMPSC 311, Spring 2013, Project 5 solution
- *
- * Author:   Don Heller
+/* CMPSC 311, Spring 2013, Project 8
+ * 
+ * Author: Jacob Jones
+ * Email: jaj5333@psu.edu
+ * 
+ * Author: Scott Cheloha
+ * Email: ssc5145@psu.edu
+ * 
+ * Original Author: Don Heller
  * Email:    dheller@cse.psu.edu
- *
- * Hake -- a fishy version of Make
- *
- * version 2, 25 Feb. 2013
- *   macro definition, expansion
- *   all required Project 5 features implemented
- * version 1, 25 Feb. 2013
- *   Project 4 solution
  * 
  * Command-line Options
  *    -h           print help
@@ -29,8 +27,6 @@
 #include <sys/types.h>
 #include <time.h>
 
-//#include "cmpsc311.h"
-//#include "names.h"
 #include "linked.h"
 #include "macro.h"
 #include "hake.h"

@@ -1,4 +1,4 @@
-/* CMPSC 311, Spring 2013, Project 7
+/* CMPSC 311, Spring 2013, Project 8
  * 
  * Author: Jacob Jones
  * Email: jaj5333@psu.edu

@@ -66,7 +66,7 @@ struct target
 	struct string_list *prereqs;
 	struct string_list *recipes;
 	time_t file_access_time;
-	int needs_to_be_haked;	// default 0; indicates whether or not target's recipes need to be printed
+	int up_to_date;	// default 1; if == 0, target's recipes need to be printed
 };
 
 // used for lists of targets
@@ -85,7 +85,8 @@ struct target_list *target_list_allocate(void);
 void target_list_deallocate(struct target_list * const list);
 
 /* target_list_print() prints entire target_list */
-void target_list_print(const struct target_list * const list);
+void target_list_print(const struct target_list * const list,
+		char *targetname_to_comment, char *comment_text);
 
 /* target_list_append() adds a node to a target_list */
 struct target *target_list_append(struct target_list * const list, const char *name);

@@ -35,6 +35,7 @@
 #include "macro.h"
 #include "hake.h"
 #include "wrapper.h"
+#include "haketarget.h"
 
 //------------------------------------------------------------------------------
 
@@ -129,7 +130,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	// scan the argv array again, from the beginning
+	// Scan the argv array again and process the -f arguments
 	optind = 1;
 	while ((ch = getopt(argc, argv, ":hvdf:")) != -1)
 	{
@@ -150,11 +151,11 @@ int main(int argc, char *argv[])
 		usage(EXIT_FAILURE);
 	}
 
-	// OK, we got all this data, now what?  That's a later project.
-
+	// Print the recipes for the targets that are out of date
 	for (int i = optind; i < argc; i++)
  	{
 		printf("  target selected: %s\n", argv[i]);
+		hake_target(argv[i]);
 	}
 
 	exit(EXIT_SUCCESS);
@@ -233,10 +234,10 @@ int read_file(char *filename, int quiet)
 
 int read_lines(char *filename, FILE *fp, time_t file_access_time)
 {
-	if (d_flag)
+	if (v_flag)
 	{
 		fprintf(stderr, "%s: read_lines(%s)\n", prog, filename);
-		printf("\tfile last accessed: %s\n", ctime(&file_access_time));
+		printf("\tfile last accessed: %s", ctime(&file_access_time));
 	}
 
 	char original[MAXLINE+2];	// from fgets()
@@ -265,6 +266,13 @@ int read_lines(char *filename, FILE *fp, time_t file_access_time)
 			{
 				string_list_deallocate(current_target->recipes);
 				current_target->recipes = current_recipes;
+			}
+
+			if (v_flag)
+			{
+				printf("%s: processed recipes for target '%s'\nRecipe list:\n",
+						prog, current_target->name);
+				string_list_print(current_target->recipes);
 			}
 			
 			current_target = NULL;
@@ -337,6 +345,28 @@ int read_lines(char *filename, FILE *fp, time_t file_access_time)
 		}
 		else if (*first_colon_or_equal == ':')
 		{
+			// If we already have a target,
+			// attempt to append current_recipes
+			// to the target's list of recipes
+			if (have_target)
+			{
+				if (current_recipes->head != NULL)
+				{
+					string_list_deallocate(current_target->recipes);
+					current_target->recipes = current_recipes;
+				}
+
+				if (v_flag)
+				{
+					printf("%s: processed recipes for target '%s'\nRecipe list:\n",
+							prog, current_target->name);
+					string_list_print(current_target->recipes);
+				}
+				
+				current_target = NULL;
+				current_recipes = NULL;
+			}
+
 			// Attempt to make a new target
 			if ((current_target = parse_target(buf, first_colon_or_equal, 
 							filename, file_access_time, line_number)) != NULL)
@@ -348,7 +378,8 @@ int read_lines(char *filename, FILE *fp, time_t file_access_time)
 				{
 					printf("%s: parsed target '%s'\n",
 							prog, current_target->name);
-					target_list_print(parsed_targets);
+					puts("Parsed targets:");
+					target_list_print(parsed_targets, NULL, NULL);
 				}
 			}
 			else
@@ -375,6 +406,7 @@ int read_lines(char *filename, FILE *fp, time_t file_access_time)
 				// If verbose, print current macro list
 				if (v_flag)
 				{
+					printf("Macro list:\n");
 					macro_list_print();
 				}
 			}

@@ -51,25 +51,18 @@ void string_list_deallocate(struct string_list * const list)
 
 void string_list_print(const struct string_list * const list)
 {
-  if (list->head == NULL)
-    { ; }
-  else
-    {
-      for (struct string_node *p = list->head; p != NULL; p = p->next)
-		  {
-        if (p->next != NULL)
-        {
-    			printf("%s, ",
-            p->body);
-		    }
-        else
-        {
-          printf("%s",
-            p->body);
-        }
-      }
-    }
+	if (list->head != NULL)
+	{
+		for (struct string_node *p = list->head; p != NULL; p = p->next)
+		{
+    		printf("  %s\n",
+				p->body);
+		}
+	}
+
+	printf("  -- end of list\n");
 }
+
 
 //------------------------------------------------------------------------------
 
@@ -184,30 +177,26 @@ void target_list_deallocate(struct target_list * const list)
 
 //------------------------------------------------------------------------------
 
-void target_list_print(const struct target_list * const list)
+void target_list_print(const struct target_list * const list,
+		char *targetname_to_comment, char *comment_text)
 {
-	puts("current parsed targets:");
-
-  if (list->head == NULL)
-    { 
-      ; 
-    }
-  else
-    {
+	//	puts("current parsed targets:");
+	if (list->head != NULL)
+	{
       for (struct target *p = list->head; p != NULL; p = p->next)
       {
-        if (p->next != NULL)
-        {
-          printf("  %s\n",
-            p->name);
-        }
-        else
-        {
-          printf("  %s\n",
-            p->name);
-        }
-      }
-    }
+          printf("  %s",
+            	p->name);
+
+			 if (targetname_to_comment != NULL 
+				  && strcmp(p->name, targetname_to_comment) == 0)
+			 {
+				printf("%s", comment_text);
+			 }
+
+			 puts("");
+		}
+	}
   puts("  -- end of list");
 }
 
@@ -221,7 +210,7 @@ struct target *target_list_append(struct target_list * const list, const char *n
   p->name = Strdup(name,  __func__, __LINE__);
   p->prereqs = string_list_allocate();
   p->recipes = string_list_allocate();
-  p->needs_to_be_haked = 0;
+  p->up_to_date = 1;
 
   if (list->head == NULL) // empty list, list->tail is also NULL
   {
